@@ -3,6 +3,7 @@
 {% for block in section.blocks %}
     {% if block.type == "promotion" %}
         <h3>{{ block.settings.title }}</h3>
+        {{ block.settings.image | image_url: width: 500 | image_tag }}
     {% endif %}
 {% endfor %}
 
