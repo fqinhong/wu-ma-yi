@@ -1,0 +1,25 @@
+
+<style>
+    .swatch {
+        border-radius: 100%;
+        width: 30px;
+        height: 30px;
+        border: 1px solid black;
+        display: block !important;
+    }
+</style>
+{{ shop.name | json }}
+<p>{{ collection.description | default: 'This is a default description' }}</p>
+<p>{{ 'This is some text with more text' | highlight: 'text'}}</p>
+<p>Copyright {{ 'now' | date: '%Y-%m-%d' }}</p>
+
+{% assign background_color = 'black' %}
+<div class="swatch" style="background: {{ background_color | color_lighten: 100 }}"></div>
+
+{% assign color1 = '#ff0000' %}
+{% assign color2 = '#0000ff' %}
+
+<div class="swatch" style="background: {{ color1 | color_mix: color2, 100 }}"></div>
+
+{% assign color3 = "#00ff00" %}
+<p>{{ color3 | color_to_rgb }}</p>
