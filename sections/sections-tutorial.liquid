@@ -20,6 +20,10 @@
 <h2>Range Setting</h2>
 <div>{{ section.settings.range_setting }}</div>
 
+
+<h2>Select Setting</h2>
+<div>{{ section.settings.select_setting }}</div>
+
 {% schema %}
     {
         "name": "Sections Tutorial",
@@ -64,6 +68,38 @@
                 "step": 5,
                 "unit": "px",
                 "default": 60
+            },
+            {
+                "type": "select",
+                "id": "select_setting",
+                "label": "Select Setting",
+                "options": [
+                    {
+                        "value": "value1",
+                        "label": "Value 1",
+                        "group ": "group-1"
+                    },
+                    {
+                        "value": "value2",
+                        "label": "Value 2",
+                        "group ": "group-2"
+                    },                   
+                    {
+                        "value": "value3",
+                        "label": "Value 3",
+                        "group ": "group-2"
+                    },                    
+                    {
+                        "value": "value4",
+                        "label": "Value 4",
+                        "group ": "group-2"
+                    },                    
+                    {
+                        "value": "value5",
+                        "label": "Value 5",
+                        "group ": "group-1"
+                    }
+                ]
             }
         ],
         "blocks": [],
