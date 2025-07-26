@@ -24,6 +24,16 @@
 <h2>Select Setting</h2>
 <div>{{ section.settings.select_setting }}</div>
 
+<h2>Checkbox Setting</h2>
+{% if section.settings.checkbox_setting == true %}
+    <p>checkbox is true</p>
+{% else %}
+    <p>checkbox is false</p>
+{% endif %}
+
+
+
+
 {% schema %}
     {
         "name": "Sections Tutorial",
@@ -95,6 +105,12 @@
                         "label": "Value 5"
                     }
                 ]
+            },
+            {
+                "type": "checkbox",
+                "label": "Checkbox Setting",
+                "id": "checkbox_setting",
+                "default": true
             }
         ],
         "blocks": [],
