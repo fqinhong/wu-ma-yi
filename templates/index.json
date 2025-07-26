@@ -145,10 +145,19 @@
             "label_position_side": 10
           },
           "blocks": {}
+        },
+        "text_8f6TXr": {
+          "type": "text",
+          "name": "Text",
+          "settings": {
+            "text": "flex-direction"
+          },
+          "blocks": {}
         }
       },
       "block_order": [
-        "ai_gen_block_86bd411_xVp3Fy"
+        "ai_gen_block_86bd411_xVp3Fy",
+        "text_8f6TXr"
       ],
       "name": "Theme Blocks Section",
       "settings": {}
