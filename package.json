@@ -1,0 +1,29 @@
+{
+  "name": "wu-ma-yi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"shopify theme dev -e development\" \"npx @tailwindcss/cli -i ./assets/tailwind.input.css -o ./assets/tailwind.output.css --watch\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fqinhong/wu-ma-yi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fqinhong/wu-ma-yi/issues"
+  },
+  "homepage": "https://github.com/fqinhong/wu-ma-yi#readme",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.11",
+    "tailwindcss": "^4.1.11"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}
