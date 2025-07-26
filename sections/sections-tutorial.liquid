@@ -36,7 +36,8 @@
 <div>{{ section.settings.radio_setting }}</div>
 
 
-
+<h2>Color Setting</h2>
+<div>{{ section.settings.color_setting }}</div>
 
 {% schema %}
     {
@@ -137,6 +138,11 @@
                         "label": "Value 4"
                     }
                 ]
+            },
+            {
+                "type": "color",
+                "label": "Color Setting",
+                "id": "color_setting"
             }
         ],
         "blocks": [],
