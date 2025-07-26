@@ -1,0 +1,24 @@
+
+<div>
+    {% content_for 'blocks' %}
+
+</div>
+
+{% schema %}
+    {
+        "name": "Theme Blocks Section",
+        "blocks": [
+            {
+                "type": "@theme"
+            },
+            {
+                "type": "@app"
+            }
+        ],
+        "presets": [
+            {
+                "name": "Theme Blocks Section"
+            }
+        ]
+    }
+{% endschema %}
