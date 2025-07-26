@@ -13,6 +13,10 @@
 <h2>Inline Richtext Setting</h2>
 <div>{{ section.settings.inline_richtext_setting }}</div>
 
+
+<h2>Number Setting</h2>
+<div>{{ section.settings.number_setting }}</div>
+
 {% schema %}
     {
         "name": "Sections Tutorial",
@@ -41,6 +45,12 @@
                 "type": "inline_richtext",
                 "id": "inline_richtext_setting",
                 "label": "Inline Richtext Setting",
+            },
+            {
+                "type": "number",
+                "id": "number_setting",
+                "label": "Number Setting",
+                "placeholder": "This is a placeholder"
             }
         ],
         "blocks": [],
