@@ -17,6 +17,9 @@
 <h2>Number Setting</h2>
 <div>{{ section.settings.number_setting }}</div>
 
+<h2>Range Setting</h2>
+<div>{{ section.settings.range_setting }}</div>
+
 {% schema %}
     {
         "name": "Sections Tutorial",
@@ -51,6 +54,16 @@
                 "id": "number_setting",
                 "label": "Number Setting",
                 "placeholder": "This is a placeholder"
+            },
+            {
+                "type": "range",
+                "id": "range_setting",
+                "label": "Range Setting",
+                "min": 50,
+                "max": 150,
+                "step": 5,
+                "unit": "px",
+                "default": 10
             }
         ],
         "blocks": [],
