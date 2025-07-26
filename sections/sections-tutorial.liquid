@@ -32,6 +32,10 @@
 {% endif %}
 
 
+<h2>Radio Setting</h2>
+<div>{{ section.settings.radio_setting }}</div>
+
+
 
 
 {% schema %}
@@ -111,6 +115,28 @@
                 "label": "Checkbox Setting",
                 "id": "checkbox_setting",
                 "default": true
+            },
+            {
+                "type": "radio",
+                "label": "Radio Button Setting",
+                "id": "radio_setting",
+                "options": [
+                    {
+                        "value": "value-1",
+                        "label": "Value 1"
+                    },
+                                        {
+                        "value": "value-2",
+                        "label": "Value 2"
+                    },                    {
+                        "value": "value-3",
+                        "label": "Value 3"
+                    },
+                                        {
+                        "value": "value-4",
+                        "label": "Value 4"
+                    }
+                ]
             }
         ],
         "blocks": [],
