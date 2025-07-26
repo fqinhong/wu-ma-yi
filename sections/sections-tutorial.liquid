@@ -3,6 +3,10 @@
 
 <p>{{ section.settings.text_setting }}</p>
 
+<h2>Textarea Setting</h2>
+<p>{{ section.settings.textarea_setting }}</p>
+
+
 {% schema %}
     {
         "name": "Sections Tutorial",
@@ -16,6 +20,11 @@
                 "label": "Theme Setting",
                 "default": "This is my first setting",
                 "info": "This is some helper text"
+            },
+            {
+                "type": "textarea",
+                "id": "textarea_setting",
+                "label": "Textarea Setting",
             }
         ],
         "blocks": [],
