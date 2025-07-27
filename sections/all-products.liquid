@@ -7,6 +7,8 @@
 {% endfor %}
 <div class="w-full">
     <all-products data-remaining_products="{{ remaining_products }}">
+        data-products-per-row = "{{ section.settings.products_per_row }}"
+
         <div class="grid grid-cols-3 gap-4" style="--items-per-row; {{ section.settings.products_per_row }}">
             {% for product in collections.all.products limit:section.settings.products_per_row %}
                 {% render 'card-product', card_product: product %}
@@ -20,9 +22,13 @@
     class AllProducts extends HTMLElement {
         constructor(){
             super();
-            console.log('entered')
+            this.loadMoreButton = this.querySelector("button");
+            this.prodcutsPerRow = this.dataset.prodcutsPerRow;
+            this.remaining_products = this.dataset.remaining_products.split(",");
+            console.log(this.remaining_products);
         }
     }
+    customElements.define('all-products', AllProducts);
 </script>
 
 
