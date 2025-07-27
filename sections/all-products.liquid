@@ -1,12 +1,17 @@
+{% assign remaining_products = '' %}
+{% for product in collections.all.products offset: section.settings.products_per_row  %}
+    {% assign remaining_products = remaining_products | append: product.handle %}
+    {% unless forloop.last %}
+        {% assign remaining_products = remaining_products | append: ','  %}
+    {% endunless %}
+{% endfor %}
 <div class="w-full">
-    <p>{{ section.settings.products_per_row }}</p>
-    <all-products>
+    <all-products data-remaining_products="{{ remaining_products }}">
         <div class="grid grid-cols-3 gap-4" style="--items-per-row; {{ section.settings.products_per_row }}">
             {% for product in collections.all.products limit:section.settings.products_per_row %}
                 {% render 'card-product', card_product: product %}
             {% endfor %}
         </div>
-
         <button class="button">Load More</button>
     </all-products>
 </div>
