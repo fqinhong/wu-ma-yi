@@ -4,7 +4,9 @@
         {{ product. metafields.custom.craftsperson.value.image | image_url: width: 250 | image_tag }}
 
         <div>
-            {{ product. metafields.custom.craftsperson.value.bio | metafield_tag }}
+            {{ product.metafields.custom.craftsperson.value.bio | metafield_tag }}
         </div>
+
+        <a href="{{ product.metafields.custom.craftsperson.value.system.url }}">Visit craftsperson's page</a>
     </div>
 {% endif %}
