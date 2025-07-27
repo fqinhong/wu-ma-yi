@@ -1,0 +1,31 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "sections_tutorial_iP7Neb": {
+      "type": "sections-tutorial",
+      "name": "Sections Tutorial",
+      "settings": {
+        "text_setting": "This is my first setting",
+        "textarea_setting": "",
+        "richtext_setting": "",
+        "inline_richtext_setting": "",
+        "range_setting": 60,
+        "select_setting": "value1",
+        "checkbox_setting": true,
+        "radio_setting": "value-1",
+        "color_setting": ""
+      }
+    }
+  },
+  "order": [
+    "sections_tutorial_iP7Neb"
+  ]
+}

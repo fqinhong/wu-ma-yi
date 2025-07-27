@@ -1,0 +1,10 @@
+{% if product.metafields.custom.craftsperson.value.name %}
+    <div class="w-full">
+        <h2>Mett the craftsperson: {{ product.metafields.custom.craftsperson.value.name }}</h2>
+        {{ product. metafields.custom.craftsperson.value.image | image_url: width: 250 | image_tag }}
+
+        <div>
+            {{ product. metafields.custom.craftsperson.value.bio | metafield_tag }}
+        </div>
+    </div>
+{% endif %}

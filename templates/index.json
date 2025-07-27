@@ -103,11 +103,71 @@
         "title": "Promotions Group",
         "title_alignment": "center"
       }
+    },
+    "sections_tutorial_JLQHtp": {
+      "type": "sections-tutorial",
+      "name": "Sections Tutorial",
+      "settings": {
+        "text_setting": "hahahah",
+        "textarea_setting": "Utilities for controlling the direction of flex items.Utilities for controlling the direction of flex items.\nUtilities for controlling the direction of flex items.Utilities for controlling the direction of flex items.",
+        "richtext_setting": "<p>This is some <em>richtext </em>setting</p><p><strong>This is my second line</strong></p><ul><li><strong>this is a list item</strong></li><li><strong>this is a list item2</strong></li></ul><h1><a href=\"/products/gift-card\" target=\"_blank\" title=\"Gift Card\"><strong>H1</strong></a></h1>",
+        "inline_richtext_setting": "Use flex-row to position flex items horizontally in the same direction as text:",
+        "number_setting": 20,
+        "range_setting": 100,
+        "select_setting": "value2",
+        "checkbox_setting": true,
+        "radio_setting": "value-3",
+        "color_setting": "#04d16c"
+      }
+    },
+    "theme_blocks_iLLFbj": {
+      "type": "theme-blocks",
+      "blocks": {
+        "ai_gen_block_86bd411_xVp3Fy": {
+          "type": "ai_gen_block_86bd411",
+          "settings": {
+            "before_image": "shopify://shop_images/Main_b13ad453-477c-4ed1-9b43-81f3345adfd6.jpg",
+            "after_image": "shopify://shop_images/Main_b9e0da7f-db89-4d41-83f0-7f417b02831d.jpg",
+            "max_width": 800,
+            "aspect_ratio": "66.67",
+            "border_radius": 8,
+            "initial_position": 50,
+            "slider_color": "#ffffff",
+            "handle_size": 40,
+            "handle_border_color": "#333333",
+            "show_labels": true,
+            "before_label": "Before",
+            "after_label": "After",
+            "label_font_size": 14,
+            "label_bg_color": "#000000",
+            "label_text_color": "#ffffff",
+            "label_position_top": 10,
+            "label_position_side": 10
+          },
+          "blocks": {}
+        },
+        "text_8f6TXr": {
+          "type": "text",
+          "name": "Text",
+          "settings": {
+            "text": "flex-direction"
+          },
+          "blocks": {}
+        }
+      },
+      "block_order": [
+        "ai_gen_block_86bd411_xVp3Fy",
+        "text_8f6TXr"
+      ],
+      "name": "Theme Blocks Section",
+      "settings": {}
     }
   },
   "order": [
     "image_banner",
     "featured_collection",
-    "promotions_group_N6MYtw"
+    "promotions_group_N6MYtw",
+    "sections_tutorial_JLQHtp",
+    "theme_blocks_iLLFbj"
   ]
 }
