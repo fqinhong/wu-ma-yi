@@ -1,0 +1,24 @@
+<h2>Dynamic Metaobject</h2>
+<p>{{ shop.metaobjects.craftsperson[section.settings.metaobject_handle].name }}</p>
+
+
+
+{% schema %}
+    {
+        "name": "Dynamic Metaobject",
+        "class": "w-full",
+        "settings": [
+            {
+                "type": "text",
+                "label": "Metaobject Handle",
+                "id": "metaobject_handle"
+            }
+
+        ],
+        "presets": [
+            {
+                "name": "Dynamic Metaobject"
+            }
+        ]
+    }
+{% endschema %}
