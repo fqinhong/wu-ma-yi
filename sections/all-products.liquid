@@ -1,5 +1,12 @@
-<p>{{ section.settings.products_per_row }}</p>
+<div class="w-full">
+    <p>{{ section.settings.products_per_row }}</p>
+    <all-products>
+        <div class="grid">
 
+        </div>
+        <button class="button">Load More</button>
+    </all-products>
+</div>
 {% schema %}
     {
         "name": "All Products",
