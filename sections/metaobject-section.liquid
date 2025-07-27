@@ -1,11 +1,21 @@
 <h1>{{ metaobject.name }}</h1>
+{{ metaobject.image | image_url: width: 500 | image_tag }}
+<h2>Bio</h2>
+<div>{{ metaobject.bio | metafield_tag }}</div>
+<h2>Products by this craftsperson</h2>
+
 <p>{{ section.settings.section_message }}</p>
 
-{% for product in collections.all.products %}
-    {% if product.metafields.custom.craftsperson.value.system.handle == metaobject.system.handle %}
-        <p>{{ product.title }}</p>
-    {% endif %}
-{% endfor %}
+<div class="grid grid-cols-3 gap-6">
+    {% for product in collections.all.products %}
+        {% if product.metafields.custom.craftsperson.value.system.handle == metaobject.system.handle %}
+            <div>
+                {{ product.featured_image | image_url: width: 350 | image_tag }}
+                <p>{{ product.title }}</p>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
 
 
 
