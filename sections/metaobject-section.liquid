@@ -1,5 +1,6 @@
 <h1>{{ metaobject.name }}</h1>
 <p>{{ section.settings.section_message }}</p>
+
 {% for product in collection.all.products %}
     {% if product.metafields.custom.craftsperson.value.system.handle == metaobject.system.handle %}
         <p>{{ product.title }}</p>
