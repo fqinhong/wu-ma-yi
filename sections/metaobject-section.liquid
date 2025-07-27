@@ -9,10 +9,10 @@
 <div class="grid grid-cols-3 gap-6">
     {% for product in collections.all.products %}
         {% if product.metafields.custom.craftsperson.value.system.handle == metaobject.system.handle %}
-            <div>
+            <a href="{{ product.url }}">
                 {{ product.featured_image | image_url: width: 350 | image_tag }}
                 <p>{{ product.title }}</p>
-            </div>
+            </a>
         {% endif %}
     {% endfor %}
 </div>
