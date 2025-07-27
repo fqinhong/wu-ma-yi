@@ -1,9 +1,12 @@
 <div class="w-full">
     <p>{{ section.settings.products_per_row }}</p>
     <all-products>
-        <div class="grid">
-
+        <div class="grid grid-cols-3 gap-4" style="--items-per-row; {{ section.settings.products_per_row }}">
+            {% for product in collections.all.products limit:section.settings.products_per_row %}
+                {% render 'card-product', card_product: product %}
+            {% endfor %}
         </div>
+
         <button class="button">Load More</button>
     </all-products>
 </div>
