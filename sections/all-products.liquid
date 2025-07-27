@@ -1,0 +1,19 @@
+<p>{{ section.settings.products_per_row }}</p>
+
+{% schema %}
+    {
+        "name": "All Products",
+        "settings": [
+            {
+                "type": "number",
+                "id": "products_per_row",
+                "label": "Products Per Row"
+            }
+        ],
+        "presets": [
+        {
+            "name": "All Products"
+        }
+        ]
+    }
+{% endschema %}
