@@ -1,8 +1,8 @@
-<h2>Dynamic Metaobject</h2>
-<p>{{ shop.metaobjects.craftsperson[section.settings.metaobject_handle].name }}</p>
-<div>{{ shop.metaobjects.craftsperson[section.settings.metaobject_handle].bio | metafield_tag }}</div>
-
-
+{% if shop.metaobjects.craftsperson[section.settings.metaobject_handle].name %}
+    <h2>Dynamic Metaobject</h2>
+    <p>{{ shop.metaobjects.craftsperson[section.settings.metaobject_handle].name }}</p>
+    <div>{{ shop.metaobjects.craftsperson[section.settings.metaobject_handle].bio | metafield_tag }}</div>
+{% endif %}
 
 {% schema %}
     {
