@@ -38,6 +38,13 @@
           "type": "quantity_selector",
           "settings": {}
         },
+        "text_aBXPFt": {
+          "type": "text",
+          "settings": {
+            "text": "the craftperson name: {{ product.metafields.custom.craftsperson.value.name.value }}",
+            "text_style": "body"
+          }
+        },
         "buy_buttons": {
           "type": "buy_buttons",
           "settings": {
@@ -62,6 +69,7 @@
         "price",
         "variant_picker",
         "quantity_selector",
+        "text_aBXPFt",
         "buy_buttons",
         "description",
         "share"

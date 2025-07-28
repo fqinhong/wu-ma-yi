@@ -25,7 +25,11 @@
             this.loadMoreButton = this.querySelector("button");
             this.prodcutsPerRow = this.dataset.prodcutsPerRow;
             this.remaining_products = this.dataset.remaining_products.split(",");
-            console.log(this.remaining_products);
+            this.grid = this.querySelector(".grid");
+            this.loadMoreButton.addEventListener("click", this.loadMoreProducts.bind(this));
+        }
+        async loadMoreProducts() {
+            console.log("loading more products");
         }
     }
     customElements.define('all-products', AllProducts);

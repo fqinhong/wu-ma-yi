@@ -48,6 +48,13 @@
         "show_text_below": false
       }
     },
+    "dynamic_metaobject_A3xBPC": {
+      "type": "dynamic-metaobject",
+      "name": "Dynamic Metaobject",
+      "settings": {
+        "metaobject_handle": "person-2"
+      }
+    },
     "featured_collection": {
       "type": "featured-collection",
       "settings": {
@@ -120,54 +127,20 @@
         "color_setting": "#04d16c"
       }
     },
-    "theme_blocks_iLLFbj": {
-      "type": "theme-blocks",
-      "blocks": {
-        "ai_gen_block_86bd411_xVp3Fy": {
-          "type": "ai_gen_block_86bd411",
-          "settings": {
-            "before_image": "shopify://shop_images/Main_b13ad453-477c-4ed1-9b43-81f3345adfd6.jpg",
-            "after_image": "shopify://shop_images/Main_b9e0da7f-db89-4d41-83f0-7f417b02831d.jpg",
-            "max_width": 800,
-            "aspect_ratio": "66.67",
-            "border_radius": 8,
-            "initial_position": 50,
-            "slider_color": "#ffffff",
-            "handle_size": 40,
-            "handle_border_color": "#333333",
-            "show_labels": true,
-            "before_label": "Before",
-            "after_label": "After",
-            "label_font_size": 14,
-            "label_bg_color": "#000000",
-            "label_text_color": "#ffffff",
-            "label_position_top": 10,
-            "label_position_side": 10
-          },
-          "blocks": {}
-        },
-        "text_8f6TXr": {
-          "type": "text",
-          "name": "Text",
-          "settings": {
-            "text": "flex-direction"
-          },
-          "blocks": {}
-        }
-      },
-      "block_order": [
-        "ai_gen_block_86bd411_xVp3Fy",
-        "text_8f6TXr"
-      ],
-      "name": "Theme Blocks Section",
-      "settings": {}
+    "all_products_BczQNa": {
+      "type": "all-products",
+      "name": "All Products",
+      "settings": {
+        "products_per_row": 3
+      }
     }
   },
   "order": [
     "image_banner",
+    "dynamic_metaobject_A3xBPC",
     "featured_collection",
     "promotions_group_N6MYtw",
     "sections_tutorial_JLQHtp",
-    "theme_blocks_iLLFbj"
+    "all_products_BczQNa"
   ]
 }

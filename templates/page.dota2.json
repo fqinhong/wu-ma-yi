@@ -9,7 +9,14 @@
  */
 {
   "sections": {
-    "sections_tutorial_iP7Neb": {
+    "main": {
+      "type": "main-page",
+      "settings": {
+        "padding_top": 28,
+        "padding_bottom": 28
+      }
+    },
+    "sections_tutorial_cr8CHw": {
       "type": "sections-tutorial",
       "name": "Sections Tutorial",
       "settings": {
@@ -23,25 +30,10 @@
         "radio_setting": "value-1",
         "color_setting": ""
       }
-    },
-    "metaobject_section_iAMMnN": {
-      "type": "metaobject-section",
-      "name": "Metaobject Section",
-      "settings": {
-        "section_message": "This is message"
-      }
-    },
-    "dynamic_metaobject_46nBk8": {
-      "type": "dynamic-metaobject",
-      "name": "Dynamic Metaobject",
-      "settings": {
-        "metaobject_handle": "person 1"
-      }
     }
   },
   "order": [
-    "sections_tutorial_iP7Neb",
-    "metaobject_section_iAMMnN",
-    "dynamic_metaobject_46nBk8"
+    "main",
+    "sections_tutorial_cr8CHw"
   ]
 }
