@@ -139,31 +139,34 @@
                             {%- endfor -%}
                           {%- endif -%}
 
+                          {% comment %} --- 开始最终诊断代码 --- {% endcomment %}
                           {%- for property in item.properties -%}
                             {%- assign property_first_char = property.first | slice: 0 -%}
                             {%- if property.last != blank and property_first_char != '_' -%}
 
-                              {% comment %} --- 这是我们的最终修改 --- {% endcomment %}
                               {% if property.first == 'CustomImagePreview' %}
-                                <div class="product-option" style="margin-top: 15px;">
-                                  <dt style="margin-bottom: 5px;"><strong>您的设计预览:</strong></dt>
+                                
+                                <h2 style="color: green; font-weight: bold; margin-top: 20px;">--- 图片代码块被执行 ---</h2>
+                                <div class="product-option">
+                                  <dt><strong>您的设计预览:</strong></dt>
                                   <dd>
-                                    <a href="{{ property.last }}" target="_blank">
-                                      <img src="{{ property.last }}" alt="定制预览" width="70" height="20" style="max-width: 200px; border: 1px solid #ccc; border-radius: 4px;">
-                                    </a>
+                                    <img src="{{ property.last }}" alt="定制预览" width="70" height="20" style="max-width: 200px; border: 1px solid #ccc;">
                                   </dd>
                                 </div>
+
                               {% else %}
-                                {% comment %} --- 对于所有其他属性，保持主题的原有行为 --- {% endcomment %}
+
+                                <h2 style="color: orange; font-weight: bold; margin-top: 20px;">--- 文本代码块被执行 ---</h2>
                                 <div class="product-option">
                                   <dt>{{ property.first }}:</dt>
                                   <dd>{{ property.last }}</dd>
                                 </div>
+
                               {% endif %}
-                              {% comment %} --- 修改结束 --- {% endcomment %}
 
                             {%- endif -%}
                           {%- endfor -%}
+                          {% comment %} --- 结束最终诊断代码 --- {% endcomment %}
                         </dl>
 
                         <p class="product-option">{{ item.selling_plan_allocation.selling_plan.name }}</p>
