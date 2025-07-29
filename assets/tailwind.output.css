@@ -8,6 +8,8 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
     --color-red-500: oklch(63.7% 0.237 25.331);
+    --color-red-600: oklch(57.7% 0.245 27.325);
+    --color-yellow-300: oklch(90.5% 0.182 98.111);
     --color-yellow-500: oklch(79.5% 0.184 86.047);
     --color-green-500: oklch(72.3% 0.219 149.579);
     --color-blue-500: oklch(62.3% 0.214 259.815);
@@ -26,6 +28,8 @@
     --text-sm--line-height: calc(1.25 / 0.875);
     --text-xl: 1.25rem;
     --text-xl--line-height: calc(1.75 / 1.25);
+    --text-4xl: 2.25rem;
+    --text-4xl--line-height: calc(2.5 / 2.25);
     --font-weight-medium: 500;
     --font-weight-bold: 700;
     --radius-md: 0.375rem;
@@ -217,6 +221,9 @@
       max-width: 96rem;
     }
   }
+  .my-4 {
+    margin-block: calc(var(--spacing) * 4);
+  }
   .mb-1 {
     margin-bottom: calc(var(--spacing) * 1);
   }
@@ -353,6 +360,9 @@
   .bg-red-500 {
     background-color: var(--color-red-500);
   }
+  .bg-yellow-300 {
+    background-color: var(--color-yellow-300);
+  }
   .bg-yellow-500 {
     background-color: var(--color-yellow-500);
   }
@@ -362,6 +372,9 @@
   .p-2 {
     padding: calc(var(--spacing) * 2);
   }
+  .p-5 {
+    padding: calc(var(--spacing) * 5);
+  }
   .px-4 {
     padding-inline: calc(var(--spacing) * 4);
   }
@@ -370,6 +383,13 @@
   }
   .py-10 {
     padding-block: calc(var(--spacing) * 10);
+  }
+  .text-center {
+    text-align: center;
+  }
+  .text-4xl {
+    font-size: var(--text-4xl);
+    line-height: var(--tw-leading, var(--text-4xl--line-height));
   }
   .text-sm {
     font-size: var(--text-sm);
@@ -389,6 +409,9 @@
   }
   .text-gray-700 {
     color: var(--color-gray-700);
+  }
+  .text-red-600 {
+    color: var(--color-red-600);
   }
   .text-white {
     color: var(--color-white);
