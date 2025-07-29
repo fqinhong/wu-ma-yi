@@ -1,46 +1,38 @@
 {% comment %}
-  最终版本：使用 Tailwind CSS 工具类进行样式设置。
-  这可以确保我们的样式与您主题的样式系统协同工作，而不是相互冲突。
-  我们已经删除了整个 <style> 块。
+  最终决战版: 我们不再依赖任何CSS来设定尺寸。
+  脚本将直接用 JavaScript 为画布容器赋予一个固定的尺寸，
+  以此来对抗主题中可能存在的、用于重置高度的脚本。
 {% endcomment %}
 
 <div class="page-width py-10 border-t border-gray-200">
   <div class="customizer-container flex flex-wrap gap-8">
     
-    {% comment %} 控制面板，使用 Tailwind 样式 {% endcomment %}
     <div class="customizer-controls w-full md:w-1/3">
       <h3 class="text-xl font-bold mb-6">设计你的标签</h3>
-      
       <div class="control-group mb-5">
         <label for="text-input" class="block text-sm font-medium text-gray-700 mb-1">输入文字:</label>
         <input type="text" id="text-input" placeholder="你的文字" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
       </div>
-
       <div class="control-group mb-5">
         <label for="font-size-input" class="block text-sm font-medium text-gray-700 mb-1">字体大小:</label>
         <input type="number" id="font-size-input" value="20" min="8" max="72" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
       </div>
-
       <div class="control-group mb-5">
         <label for="color-input" class="block text-sm font-medium text-gray-700 mb-1">字体颜色:</label>
-        {% comment %} 颜色选择器可能需要特定样式来保证高度一致 {% endcomment %}
         <input type="color" id="color-input" value="#000000" class="w-full h-10 p-1 border border-gray-300 rounded-md cursor-pointer">
       </div>
-
       <button id="add-to-cart-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
         添加到购物车
       </button>
     </div>
 
-    {% comment %} 画布区域，使用 Tailwind 样式 - 这是最关键的修复！ {% endcomment %}
-    <div class="canvas-wrapper w-full md:w-2/3 bg-gray-50 border border-gray-200 rounded-md min-h-[250px] md:min-h-0">
-      <div id="konva-container" class="w-full h-full"></div>
+    <div class="canvas-wrapper w-full md:flex-1 bg-gray-50 border border-gray-200 rounded-md">
+      <div id="konva-container"></div>
     </div>
 
   </div>
 </div>
 
-{% comment %} JavaScript 部分保持不变，它已经是最终形态 {% endcomment %}
 <script>
   const initializeKonvaApp = (sectionElement) => {
     const konvaContainer = sectionElement.querySelector('#konva-container');
@@ -49,16 +41,27 @@
 
     console.log("Konva: 初始化开始...");
     
+    // 【最终决战策略：用JS直接设定尺寸】
+    // 我们不再读取尺寸，而是强制写入尺寸，以覆盖主题JS的影响。
+    const fixedWidth = konvaContainer.parentElement.clientWidth || 500; // 尝试获取父容器宽度，如果失败则使用500
+    const fixedHeight = 300; // 直接定义一个固定的高度
+
+    konvaContainer.style.width = `${fixedWidth}px`;
+    konvaContainer.style.height = `${fixedHeight}px`;
+    konvaContainer.style.border = '2px dashed blue'; // 添加一个可见边框用于最终诊断
+
+    // 延迟一个极短的时间，确保style已应用
     setTimeout(() => {
-        const stageWidth = konvaContainer.clientWidth;
-        const stageHeight = konvaContainer.clientHeight;
+        // 我们不再读取 clientWidth/Height，而是直接使用我们设定的值
+        const stageWidth = fixedWidth;
+        const stageHeight = fixedHeight;
         
         if (stageWidth === 0 || stageHeight === 0) {
-            console.error("Konva 致命错误: 容器尺寸仍为0。请确认 .canvas-wrapper 上有 Tailwind 的 min-height 类，如 min-h-[250px]");
+            console.error("Konva 致命错误: 这不应该发生！");
             return;
         }
 
-        console.log(`Konva: 容器尺寸最终确定为: ${stageWidth}x${stageHeight}`);
+        console.log(`Konva: 已用JS强制设定尺寸: ${stageWidth}x${stageHeight}`);
         
         const stage = new Konva.Stage({ container: konvaContainer, width: stageWidth, height: stageHeight });
         const layer = new Konva.Layer();
@@ -75,6 +78,7 @@
         layer.draw();
         console.log("Konva: 画布已绘制！");
 
+        // ... 事件监听器代码保持不变 ...
         const textInput = sectionElement.querySelector('#text-input');
         const fontSizeInput = sectionElement.querySelector('#font-size-input');
         const colorInput = sectionElement.querySelector('#color-input');
@@ -99,9 +103,10 @@
               .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
               .catch(console.error);
         });
-    }, 0);
+    }, 100); // 稍微增加延迟，给JS样式应用留出时间
   };
 
+  // ---- 终极启动器 (保持不变) ----
   const bootstrapper = () => {
     const konvaCheckInterval = setInterval(() => {
       if (typeof window.Konva !== 'undefined') {

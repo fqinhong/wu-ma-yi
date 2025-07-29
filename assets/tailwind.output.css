@@ -482,6 +482,11 @@
       width: calc(2/3 * 100%);
     }
   }
+  .md\:flex-1 {
+    @media (width >= 48rem) {
+      flex: 1;
+    }
+  }
 }
 @property --tw-rotate-x {
   syntax: "*";
