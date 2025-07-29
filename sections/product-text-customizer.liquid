@@ -145,16 +145,18 @@
 </script> {% endcomment %}
 
 <script>
-  // 核心初始化逻辑 (保持不变)
+  // 核心初始化逻辑
   const initializeKonvaApp = (sectionElement) => {
     const konvaContainer = sectionElement.querySelector('#konva-container');
     if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
     konvaContainer.dataset.initialized = 'true';
 
-    console.log("Konva Log: 依赖项全部就绪，开始初始化应用...");
+    console.log("--- Konva 详细诊断开始 ---");
 
     const stageWidth = konvaContainer.clientWidth;
     const stageHeight = konvaContainer.clientHeight;
+    console.log(`诊断 1: 画布尺寸: width=${stageWidth}, height=${stageHeight}`);
+
     const stage = new Konva.Stage({ container: konvaContainer, width: stageWidth, height: stageHeight });
     const layer = new Konva.Layer();
     stage.add(layer);
@@ -162,16 +164,46 @@
     const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: stageWidth, height: stageHeight, fill: '#FFFFFF', stroke: '#dddddd', strokeWidth: 1 });
     layer.add(backgroundRect);
     
-    const konvaText = new Konva.Text({ x: stageWidth / 2, y: stageHeight / 2, text: '你的文字', fontSize: 30, fontFamily: 'Arial', fill: '#000000', draggable: true });
+    // 【调试重点1：添加一个简单的红色方块作为“对照组”】
+    // 如果能看到这个方块，说明画布和图层工作正常。
+    const testRect = new Konva.Rect({
+      x: 20,
+      y: 20,
+      width: 50,
+      height: 50,
+      fill: 'red',
+      draggable: true
+    });
+    layer.add(testRect);
+    console.log('诊断 2: 已添加红色测试方块。');
+
+    const konvaText = new Konva.Text({
+      x: stageWidth / 2,
+      y: stageHeight / 2,
+      text: '你的文字',
+      fontSize: 30,
+      fontFamily: 'Arial',
+      fill: '#000000',
+      draggable: true
+    });
     layer.add(konvaText);
+
+    // 【调试重点2：在应用偏移量之前和之后都打印日志】
+    console.log(`诊断 3: 文字创建后尺寸: width=${konvaText.width()}, height=${konvaText.height()}`);
+    
     konvaText.offsetX(konvaText.width() / 2);
     konvaText.offsetY(konvaText.height() / 2);
 
+    console.log(`诊断 4: 文字应用偏移后: offsetX=${konvaText.offsetX()}, offsetY=${konvaText.offsetY()}`);
+    console.log(`诊断 5: 文字最终坐标: x=${konvaText.x()}, y=${konvaText.y()}`);
+
+    // 使用延迟绘制，确保所有计算都已完成
     setTimeout(() => {
       layer.draw();
-      console.log("Konva Log: 画布已绘制！");
+      console.log("诊断 6: 画布已绘制！请检查页面。");
     }, 100);
 
+    // ... 其余事件监听代码保持不变 ...
     const textInput = sectionElement.querySelector('#text-input');
     const fontSizeInput = sectionElement.querySelector('#font-size-input');
     const colorInput = sectionElement.querySelector('#color-input');
@@ -186,10 +218,12 @@
       const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
       if (!variantIdInput || !variantIdInput.value) { alert('错误：找不到产品变体ID。'); return; }
       const variantId = variantIdInput.value;
+      testRect.hide(); // 隐藏测试方块
       backgroundRect.hide();
       layer.draw();
       const previewImage = stage.toDataURL({ pixelRatio: 2 });
       backgroundRect.show();
+      testRect.show();
       layer.draw();
       const formData = { items: [{ id: variantId, quantity: 1, properties: { '_CustomTextPreview': previewImage, '定制文字': textInput.value, '字体大小': fontSizeInput.value, '字体颜色': colorInput.value }}] };
       fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
@@ -198,43 +232,29 @@
     });
   };
 
-  // ---- 终极解决方案：两阶段轮询启动器 ----
+  // ---- 终极启动器 (保持不变) ----
   const bootstrapper = () => {
-    // 阶段一: 轮询等待 Konva 库加载完成
-    console.log("Konva Log: 启动器已运行，等待 Konva 库加载...");
     const konvaCheckInterval = setInterval(() => {
       if (typeof window.Konva !== 'undefined') {
-        clearInterval(konvaCheckInterval); // 停止第一阶段轮询
-        console.log("Konva Log: 库已加载！现在等待 HTML 元素...");
-
-        // 阶段二: Konva库已加载，现在轮询等待 HTML 元素渲染
+        clearInterval(konvaCheckInterval);
         const sectionId = 'shopify-section-{{ section.id }}';
         const sectionElement = document.getElementById(sectionId);
         if (!sectionElement) return;
-
         const elementCheckInterval = setInterval(() => {
           const konvaContainer = sectionElement.querySelector('#konva-container');
           if (konvaContainer) {
-            clearInterval(elementCheckInterval); // 停止第二阶段轮询
-            // 所有条件都已满足，执行主程序！
+            clearInterval(elementCheckInterval);
             initializeKonvaApp(sectionElement);
           }
         }, 100);
-        setTimeout(() => { clearInterval(elementCheckInterval); }, 5000); // 安全超时
+        setTimeout(() => { clearInterval(elementCheckInterval); }, 5000);
       }
     }, 100);
-    setTimeout(() => { clearInterval(konvaCheckInterval); }, 5000); // 安全超时
+    setTimeout(() => { clearInterval(konvaCheckInterval); }, 5000);
   };
-
-  // 监听所有可能的加载事件来触发我们的启动器
   document.addEventListener('turbo:load', bootstrapper);
   document.addEventListener('shopify:section:load', bootstrapper);
-  // 对于直接加载或硬刷新的情况
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootstrapper);
-  } else {
-    bootstrapper();
-  }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', bootstrapper); } else { bootstrapper(); }
 </script>
 
 {% schema %}
