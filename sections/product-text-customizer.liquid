@@ -95,7 +95,7 @@
             const variantId = variantIdInput.value;
             backgroundRect.hide();
             layer.draw();
-            const previewImage = stage.toDataURL({ pixelRatio: 2 });
+            const previewImage = stage.toDataURL({ pixelRatio: 1 });
             backgroundRect.show();
             layer.draw();
             const formData = { items: [{ id: variantId, quantity: 1, properties: { '_CustomTextPreview': previewImage, '定制文字': textInput.value, '字体大小': fontSizeInput.value, '字体颜色': colorInput.value }}] };
