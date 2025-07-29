@@ -153,7 +153,7 @@
                     quantity: 1,
                     properties: {
                         // 我们现在同时发送图片和文本属性
-                        '_CustomTextPreview': previewImage,
+                        'CustomTextPreview': previewImage,
                         '定制文字': textInput.value,
                         '字体大小': fontSizeInput.value, 
                         '字体颜色': colorInput.value
@@ -176,7 +176,7 @@
             })
             .catch(console.error);
         });
-        
+
     }, 100); // 稍微增加延迟，给JS样式应用留出时间
   };
 

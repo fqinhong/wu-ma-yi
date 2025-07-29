@@ -170,25 +170,41 @@
                         {%- endfor -%}
                       </ul>
 
-                      {% comment %} 在 main-cart-items.liquid 文件中找到合适的位置添加 {% endcomment %}
+                      {% comment %} --- 开始诊断代码 --- {% endcomment %}
 
                       {% for property in item.properties %}
-                        {% if property.first == '_CustomTextPreview' %}
-                          <div style="margin-top: 10px;">
-                            <p><strong>您的设计预览:</strong></p>
-                            <img src="{{ property.last }}" alt="定制预览" width="200" height="200" style="max-width: 200px; border: 1px solid #ccc;">
+
+                        {% comment %} 1. 我们现在寻找不带下划线的新名称 {% endcomment %}
+                        {% if property.first == 'CustomImagePreview' %}
+                          <div style="margin-top: 10px; border: 2px dashed red; padding: 10px;">
+                            
+                            <p><strong>您的设计预览 (新):</strong></p>
+                            
+                            {% comment %} 2. 尝试显示图片 {% endcomment %}
+                            <img src="{{ property.last }}" alt="定制预览" style="max-width: 200px; border: 1px solid #ccc; display: block !important;">
+                            
+                            <p style="margin-top: 10px;"><strong>调试信息:</strong></p>
+                            
+                            {% comment %} 3. 把属性值作为文本打印出来，看看它是否存在。我们截取前100个字符。 {% endcomment %}
+                            <p style="font-size: 10px; word-break: break-all;">
+                              属性值 (截断): {{ property.last | truncate: 100 }}
+                            </p>
+
                           </div>
                         {% endif %}
+
                       {% endfor %}
 
-                      {% comment %} 你也可以用类似的方法显示其他属性 {% endcomment %}
+                      {% comment %} 为了显示其他属性的列表，这段代码保持不变 {% endcomment %}
                       <ul style="margin-top:10px; list-style-type: none; padding-left: 0;">
                         {% for property in item.properties %}
-                          {% unless property.first startswith '_' %}
+                          {% unless property.first startswith '_' or property.first == 'CustomImagePreview' %}
                             <li>{{ property.first }}: {{ property.last }}</li>
                           {% endunless %}
                         {% endfor %}
                       </ul>
+
+                      {% comment %} --- 结束诊断代码 --- {% endcomment %}
                     </td>
 
                     <td class="cart-item__totals right medium-hide large-up-hide">
