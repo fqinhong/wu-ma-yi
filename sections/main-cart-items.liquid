@@ -139,37 +139,65 @@
                             {%- endfor -%}
                           {%- endif -%}
 
-                          {% comment %} --- 这是最终的、修正后的代码 --- {% endcomment %}
-                          {%- for property in item.properties -%}
-                            {%- assign property_first_char = property.first | slice: 0 -%}
-                            {%- if property.last != blank and property_first_char != '_' -%}
+{% comment %} --- X光诊断代码 --- {% endcomment %}
+{%- for property in item.properties -%}
+  {%- assign property_first_char = property.first | slice: 0 -%}
+  {%- if property.last != blank and property_first_char != '_' -%}
 
-                              {% comment %} 
-                                【关键修正】
-                                我们使用 | strip 过滤器来移除 property.first 两端的任何空格或不可见字符，
-                                然后再进行比较，确保比较的准确性。
-                              {% endcomment %}
-                              {% if property.first | strip == 'CustomImagePreview' %}
-                                
-                                <div class="product-option" style="margin-top: 15px;">
-                                  <dt style="margin-bottom: 5px;"><strong>您的设计预览:</strong></dt>
-                                  <dd>
-                                    <img src="{{ property.last }}" alt="定制预览" style="max-width: 200px; border: 1px solid #ccc; border-radius: 4px;">
-                                  </dd>
-                                </div>
+    {% comment %} 我们暂时移除if/else，直接对所有属性进行诊断 {% endcomment %}
 
-                              {% else %}
-                                
-                                {% comment %} 对于所有其他属性，保持主题的原有行为 {% endcomment %}
-                                <div class="product-option">
-                                  <dt>{{ property.first }}:</dt>
-                                  <dd>{{ property.last }}</dd>
-                                </div>
+    <div style="background-color: #f0f0f0; border: 2px solid #ccc; padding: 10px; margin-top: 20px;">
 
-                              {% endif %}
+      <h3 style="color: blue; font-weight: bold;">诊断属性: '{{ property.first }}'</h3>
+      
+      <ul style="font-family: monospace; list-style-type: square; margin-left: 20px;">
+        
+        <li>
+          【原始值】(用箭头包裹，检查空格): <br>
+          <code style="background: #fff; padding: 2px;">->{{ property.first }}<-</code>
+        </li>
+        
+        <li>
+          【字符串长度】(正确值应为18): <br>
+          <code style="background: #fff; padding: 2px;">Length: {{ property.first | size }}</code>
+        </li>
 
-                            {%- endif -%}
-                          {%- endfor -%}
+        <li>
+          【清理后的值】(strip): <br>
+          <code style="background: #fff; padding: 2px;">->{{ property.first | strip }}<-</code>
+        </li>
+
+        <li>
+          【清理+小写后的值】(strip & downcase): <br>
+          <code style="background: #fff; padding: 2px;">->{{ property.first | strip | downcase }}<-</code>
+        </li>
+        
+        <li>
+          【包含检查】(是否包含"CustomImagePreview"?): <br>
+          <code style="background: #fff; padding: 2px;">
+            Contains 'CustomImagePreview'?: {% if property.first contains 'CustomImagePreview' %}YES{% else %}NO{% endif %}
+          </code>
+        </li>
+        
+        <li>
+          【最终比较结果】(清理并转为小写后，是否等于'customimagepreview'?): <br>
+          <code style="background: #fff; padding: 2px;">
+            Final Compare: {% if property.first | strip | downcase == 'customimagepreview' %}MATCH!{% else %}FAIL!{% endif %}
+          </code>
+        </li>
+
+      </ul>
+
+      {% comment %} 如果是图片属性，我们在这里也尝试显示一下图片 {% endcomment %}
+      {% if property.first | strip | downcase == 'customimagepreview' %}
+        <p style="font-weight: bold; color: green;">检测到图片属性，尝试渲染:</p>
+        <img src="{{ property.last }}" alt="定制预览" style="max-width: 200px; border: 1px solid #ccc;">
+      {% endif %}
+
+    </div>
+
+  {%- endif -%}
+{%- endfor -%}
                         </dl>
 
                         <p class="product-option">{{ item.selling_plan_allocation.selling_plan.name }}</p>
