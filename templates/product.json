@@ -107,10 +107,15 @@
         "padding_top": 36,
         "padding_bottom": 28
       }
+    },
+    "customizer": {
+      "type": "product-text-customizer",
+      "settings": {}
     }
   },
   "order": [
     "main",
+    "customizer",
     "related-products"
   ]
 }

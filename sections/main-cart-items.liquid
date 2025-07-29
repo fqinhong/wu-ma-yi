@@ -169,6 +169,26 @@
                           </li>
                         {%- endfor -%}
                       </ul>
+
+                      {% comment %} 在 main-cart-items.liquid 文件中找到合适的位置添加 {% endcomment %}
+
+                      {% for property in item.properties %}
+                        {% if property.first == '_CustomTextPreview' %}
+                          <div style="margin-top: 10px;">
+                            <p><strong>您的设计预览:</strong></p>
+                            <img src="{{ property.last }}" alt="定制预览" width="200" height="200" style="max-width: 200px; border: 1px solid #ccc;">
+                          </div>
+                        {% endif %}
+                      {% endfor %}
+
+                      {% comment %} 你也可以用类似的方法显示其他属性 {% endcomment %}
+                      <ul style="margin-top:10px; list-style-type: none; padding-left: 0;">
+                        {% for property in item.properties %}
+                          {% unless property.first startswith '_' %}
+                            <li>{{ property.first }}: {{ property.last }}</li>
+                          {% endunless %}
+                        {% endfor %}
+                      </ul>
                     </td>
 
                     <td class="cart-item__totals right medium-hide large-up-hide">

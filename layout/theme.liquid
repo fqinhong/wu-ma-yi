@@ -298,6 +298,10 @@
     </script>
 
     {{ 'tailwind.output.css' | asset_url | stylesheet_tag }}
+
+    <!-- Konva.js Library -->
+    <script src="{{ 'konva.min.js' | asset_url }}" defer></script>
+    
   </head>
 
   <body class="gradient{% if settings.animations_hover_elements != 'none' %} animate--hover-{{ settings.animations_hover_elements }}{% endif %}">
