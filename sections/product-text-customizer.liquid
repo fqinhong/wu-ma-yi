@@ -1,82 +1,32 @@
-{% comment %}
-  我们将 HTML, CSS 和 JavaScript 全部写在这个文件中，方便管理。
-{% endcomment %}
-
-<div class="page-width">
-  <div class="customizer-container">
-    
-    <div class="customizer-controls">
-      <h3>设计你的标签</h3>
-      
-      <div class="control-group">
-        <label for="text-input">输入文字:</label>
-        <input type="text" id="text-input" placeholder="你的文字">
-      </div>
-
-      <div class="control-group">
-        <label for="font-size-input">字体大小:</label>
-        <input type="number" id="font-size-input" value="20" min="8" max="72">
-      </div>
-
-      <div class="control-group">
-        <label for="color-input">字体颜色:</label>
-        <input type="color" id="color-input" value="#000000">
-      </div>
-
-      <button id="add-to-cart-btn" class="button button--primary">添加到购物车</button>
-    </div>
-
-    <div class="canvas-wrapper">
-      <div id="konva-container"></div>
-    </div>
-
-  </div>
-</div>
-
-<style>
-  .customizer-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 30px;
-    margin: 40px 0;
-    padding-top: 40px;
-    border-top: 1px solid #e5e5e5;
-  }
-  .customizer-controls {
-    flex: 1;
-    min-width: 250px;
-  }
-  .canvas-wrapper {
-    flex: 2;
-    min-width: 400px;
-    background-color: #f7f7f7;
-    border: 1px solid #ccc;
-    height: 200px; /* 画布容器高度 */
-  }
-  #konva-container {
-    width: 100%;
-    height: 100%;
-  }
-  .control-group {
-    margin-bottom: 20px;
-  }
-  .control-group label {
-    display: block;
-    margin-bottom: 5px;
-  }
-  .control-group input {
-    width: 100%;
-    padding: 8px;
-  }
-</style>
-
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // --- 1. 初始化 Konva 画布 ---
+  // 使用一个更可靠的方式确保DOM加载完毕
+  if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCustomizer);
+  } else {
+      initCustomizer();
+  }
+
+  function initCustomizer() {
+    console.log("步骤 1: initCustomizer 函数开始执行。");
+
     const container = document.querySelector('#konva-container');
+    if (!container) {
+      console.error("错误: 找不到ID为 'konva-container' 的元素！请检查HTML结构。");
+      return; // 找不到容器，直接退出
+    }
+    console.log("步骤 2: 成功找到 #konva-container 元素:", container);
+    
+    // 确保容器有尺寸
+    if (container.clientWidth === 0 || container.clientHeight === 0) {
+      console.error("错误: #konva-container 的宽度或高度为0！请检查CSS。");
+      // 即使尺寸为0，我们仍然尝试创建，但会给出警告
+    }
+
     const stageWidth = container.clientWidth;
     const stageHeight = container.clientHeight;
+    console.log(`步骤 3: 准备创建舞台，尺寸: ${stageWidth} x ${stageHeight}`);
 
+    // --- 初始化 Konva 画布 ---
     const stage = new Konva.Stage({
       container: 'konva-container',
       width: stageWidth,
@@ -85,87 +35,82 @@
 
     const layer = new Konva.Layer();
     stage.add(layer);
+    console.log("步骤 4: Konva 舞台 (Stage) 和图层 (Layer) 创建成功。");
 
-    // --- 2. 创建一个代表标签背景的矩形 ---
+    // --- 创建背景矩形 ---
     const backgroundRect = new Konva.Rect({
-      x: 0,
-      y: 0,
-      width: stageWidth,
-      height: stageHeight,
-      fill: '#FFFFFF', // 标签底色
-      stroke: '#dddddd', // 边框颜色
-      strokeWidth: 1
+      x: 0, y: 0, width: stageWidth, height: stageHeight,
+      fill: '#FFFFFF', stroke: '#dddddd', strokeWidth: 1
     });
     layer.add(backgroundRect);
 
-    // --- 3. 创建核心的文本对象 ---
+    // --- 创建核心的文本对象 ---
     const konvaText = new Konva.Text({
       x: stageWidth / 2,
       y: stageHeight / 2,
-      text: '你的文字',
+      text: '你的文字', // 确保有默认文字
       fontSize: 20,
       fontFamily: 'Arial',
-      fill: '#000000',
-      draggable: true, // 让文字可以被拖动
+      fill: '#000000', // 确保颜色和背景色不同
+      draggable: true,
     });
-    // 让文本居中
-    konvaText.offsetX(konvaText.width() / 2);
-    konvaText.offsetY(konvaText.height() / 2);
+    
+    // 必须在添加到图层后才能准确计算偏移
     layer.add(konvaText);
     
-    layer.draw(); // 首次绘制
+    // 将文本的中心点移动到其坐标(x,y)处
+    konvaText.offsetX(konvaText.width() / 2);
+    konvaText.offsetY(konvaText.height() / 2);
+    
+    console.log("步骤 5: Konva 文本对象创建并已添加到图层。");
 
-    // --- 4. 关联 HTML 控件和 Konva 文本对象 ---
+    // --- 首次绘制 ---
+    layer.draw();
+    console.log("步骤 6: 执行 layer.draw()，画布应该已更新。");
+
+    // --- 关联 HTML 控件和 Konva 文本对象 ---
     const textInput = document.getElementById('text-input');
     const fontSizeInput = document.getElementById('font-size-input');
     const colorInput = document.getElementById('color-input');
 
-    // 监听文本输入
     textInput.addEventListener('input', (e) => {
       konvaText.text(e.target.value);
-      konvaText.offsetX(konvaText.width() / 2); // 保持居中
+      konvaText.offsetX(konvaText.width() / 2); // 每次文本改变都重新计算中心点
       layer.draw();
     });
 
-    // 监听字体大小变化
     fontSizeInput.addEventListener('input', (e) => {
       konvaText.fontSize(parseInt(e.target.value, 10));
-      konvaText.offsetX(konvaText.width() / 2); // 保持居中
+      konvaText.offsetX(konvaText.width() / 2);
       konvaText.offsetY(konvaText.height() / 2);
       layer.draw();
     });
 
-    // 监听颜色变化
     colorInput.addEventListener('input', (e) => {
       konvaText.fill(e.target.value);
       layer.draw();
     });
-    
-    // --- 5. 添加到购物车逻辑 ---
+    console.log("步骤 7: 所有事件监听器已添加。");
+
+    // --- 添加到购物车逻辑 ---
+    // (这部分代码保持不变)
     const addToCartBtn = document.getElementById('add-to-cart-btn');
     addToCartBtn.addEventListener('click', function(e) {
       e.preventDefault();
-
-      // 获取当前产品页面的变体ID
-      const variantId = document.querySelector('input[name="id"]').value;
+      const variantId = document.querySelector('input[name="id"]')?.value || document.querySelector('[name="id"]')?.value;
       if (!variantId) {
         alert('请先选择一个产品规格！');
         return;
       }
-      
-      // 生成预览图 (Base64格式)
-      // 我们暂时将背景矩形隐藏，只导出文本的图像
       backgroundRect.hide();
       layer.draw();
-      const previewImage = stage.toDataURL({ pixelRatio: 2 }); // pixelRatio 提高清晰度
-      backgroundRect.show(); // 恢复显示
+      const previewImage = stage.toDataURL({ pixelRatio: 2 });
+      backgroundRect.show();
       layer.draw();
-
-      // 准备要发送到购物车的数据
       let formData = {
         'items': [{
           'id': variantId,
-          'quantity': 1, // 暂时硬编码为1，你可以添加一个数量输入框
+          'quantity': 1,
           'properties': {
             '_CustomTextPreview': previewImage,
             '定制文字': textInput.value,
@@ -174,13 +119,9 @@
           }
         }]
       };
-
-      // 使用 Shopify Ajax API 添加到购物车
       fetch('/cart/add.js', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
       .then(response => response.json())
@@ -188,26 +129,12 @@
         if (data.status) {
             alert('添加失败: ' + data.description);
         } else {
-            // 添加成功后，跳转到购物车页面
             window.location.href = '/cart';
         }
       })
       .catch((error) => {
-        console.error('Error:', error);
-        alert('添加时发生错误，请查看控制台。');
+        console.error('添加到购物车时发生错误:', error);
       });
     });
-  });
+  }
 </script>
-
-{% schema %}
-{
-  "name": "Product Text Customizer",
-  "settings": [],
-  "presets": [
-    {
-      "name": "Product Text Customizer"
-    }
-  ]
-}
-{% endschema %}
