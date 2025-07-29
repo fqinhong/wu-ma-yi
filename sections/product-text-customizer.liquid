@@ -1,32 +1,21 @@
 <script>
-  // 使用一个更可靠的方式确保DOM加载完毕
-  if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initCustomizer);
-  } else {
-      initCustomizer();
-  }
+  // 将我们的初始化代码包装在一个函数中
+  const initializeCustomizer = function() {
+    // 再次检查，确保是在产品页面上
+    if (!document.querySelector('#konva-container')) {
+      return; 
+    }
 
-  function initCustomizer() {
-    console.log("步骤 1: initCustomizer 函数开始执行。");
+    console.log("Konva 初始化程序启动...");
 
     const container = document.querySelector('#konva-container');
-    if (!container) {
-      console.error("错误: 找不到ID为 'konva-container' 的元素！请检查HTML结构。");
-      return; // 找不到容器，直接退出
-    }
-    console.log("步骤 2: 成功找到 #konva-container 元素:", container);
-    
-    // 确保容器有尺寸
-    if (container.clientWidth === 0 || container.clientHeight === 0) {
-      console.error("错误: #konva-container 的宽度或高度为0！请检查CSS。");
-      // 即使尺寸为0，我们仍然尝试创建，但会给出警告
-    }
-
     const stageWidth = container.clientWidth;
     const stageHeight = container.clientHeight;
-    console.log(`步骤 3: 准备创建舞台，尺寸: ${stageWidth} x ${stageHeight}`);
 
-    // --- 初始化 Konva 画布 ---
+    if (stageWidth === 0) {
+      console.warn("警告: 画布容器宽度为0。请检查CSS。");
+    }
+
     const stage = new Konva.Stage({
       container: 'konva-container',
       width: stageWidth,
@@ -35,47 +24,37 @@
 
     const layer = new Konva.Layer();
     stage.add(layer);
-    console.log("步骤 4: Konva 舞台 (Stage) 和图层 (Layer) 创建成功。");
 
-    // --- 创建背景矩形 ---
     const backgroundRect = new Konva.Rect({
       x: 0, y: 0, width: stageWidth, height: stageHeight,
       fill: '#FFFFFF', stroke: '#dddddd', strokeWidth: 1
     });
     layer.add(backgroundRect);
 
-    // --- 创建核心的文本对象 ---
     const konvaText = new Konva.Text({
       x: stageWidth / 2,
       y: stageHeight / 2,
-      text: '你的文字', // 确保有默认文字
+      text: '你的文字',
       fontSize: 20,
       fontFamily: 'Arial',
-      fill: '#000000', // 确保颜色和背景色不同
+      fill: '#000000',
       draggable: true,
     });
-    
-    // 必须在添加到图层后才能准确计算偏移
     layer.add(konvaText);
-    
-    // 将文本的中心点移动到其坐标(x,y)处
     konvaText.offsetX(konvaText.width() / 2);
     konvaText.offsetY(konvaText.height() / 2);
     
-    console.log("步骤 5: Konva 文本对象创建并已添加到图层。");
-
-    // --- 首次绘制 ---
     layer.draw();
-    console.log("步骤 6: 执行 layer.draw()，画布应该已更新。");
+    console.log("Konva 画布已绘制！现在应该能看到文字了。");
 
-    // --- 关联 HTML 控件和 Konva 文本对象 ---
+    // --- 事件监听 ---
     const textInput = document.getElementById('text-input');
     const fontSizeInput = document.getElementById('font-size-input');
     const colorInput = document.getElementById('color-input');
 
     textInput.addEventListener('input', (e) => {
-      konvaText.text(e.target.value);
-      konvaText.offsetX(konvaText.width() / 2); // 每次文本改变都重新计算中心点
+      konvaText.text(e.target.value || ' '); // 使用一个空格作为空值的占位符，防止宽度计算错误
+      konvaText.offsetX(konvaText.width() / 2);
       layer.draw();
     });
 
@@ -90,23 +69,25 @@
       konvaText.fill(e.target.value);
       layer.draw();
     });
-    console.log("步骤 7: 所有事件监听器已添加。");
 
     // --- 添加到购物车逻辑 ---
-    // (这部分代码保持不变)
     const addToCartBtn = document.getElementById('add-to-cart-btn');
     addToCartBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      const variantId = document.querySelector('input[name="id"]')?.value || document.querySelector('[name="id"]')?.value;
-      if (!variantId) {
-        alert('请先选择一个产品规格！');
+      
+      const variantIdInput = document.querySelector('form[action*="/cart/add"] input[name="id"]');
+      if (!variantIdInput || !variantIdInput.value) {
+        alert('错误：无法找到产品变体ID。请确保页面上有标准的“添加到购物车”表单。');
         return;
       }
+      const variantId = variantIdInput.value;
+
       backgroundRect.hide();
       layer.draw();
       const previewImage = stage.toDataURL({ pixelRatio: 2 });
       backgroundRect.show();
       layer.draw();
+      
       let formData = {
         'items': [{
           'id': variantId,
@@ -119,6 +100,7 @@
           }
         }]
       };
+      
       fetch('/cart/add.js', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -127,14 +109,32 @@
       .then(response => response.json())
       .then(data => {
         if (data.status) {
-            alert('添加失败: ' + data.description);
+          alert('添加失败: ' + data.description);
         } else {
-            window.location.href = '/cart';
+          window.location.href = '/cart';
         }
       })
       .catch((error) => {
         console.error('添加到购物车时发生错误:', error);
       });
     });
+  };
+
+  // --- 健壮的脚本加载策略 ---
+  // 监听 Shopify section 加载事件 (针对主题编辑器内的实时刷新)
+  document.addEventListener('shopify:section:load', function(event) {
+    if (event.detail.sectionId === '{{ section.id }}') {
+      console.log("通过 shopify:section:load 事件加载定制器。");
+      initializeCustomizer();
+    }
+  });
+
+  // 标准的 DOM 加载事件 (针对正常的页面加载)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeCustomizer);
+  } else {
+    // 如果页面已经加载完成
+    console.log("DOM 已加载，直接初始化定制器。");
+    initializeCustomizer();
   }
 </script>
