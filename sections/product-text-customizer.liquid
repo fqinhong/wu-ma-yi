@@ -76,91 +76,84 @@
 </style>
 
 <script>
-  // 核心初始化逻辑
   const initializeKonvaApp = (sectionElement) => {
     const konvaContainer = sectionElement.querySelector('#konva-container');
     if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
     konvaContainer.dataset.initialized = 'true';
 
-    console.log("--- Konva 详细诊断开始 ---");
+    console.log("Konva: 初始化开始...");
 
-    const stageWidth = konvaContainer.clientWidth;
-    const stageHeight = konvaContainer.clientHeight;
-    console.log(`诊断 1: 画布尺寸: width=${stageWidth}, height=${stageHeight}`);
+    // 【最终解决方案】
+    // 我们不再在开始时获取尺寸，而是让画布自己适应容器
+    // Konva 会自动处理尺寸问题
 
-    const stage = new Konva.Stage({ container: konvaContainer, width: stageWidth, height: stageHeight });
-    const layer = new Konva.Layer();
-    stage.add(layer);
-
-    const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: stageWidth, height: stageHeight, fill: '#FFFFFF', stroke: '#dddddd', strokeWidth: 1 });
-    layer.add(backgroundRect);
-    
-    // 【调试重点1：添加一个简单的红色方块作为“对照组”】
-    // 如果能看到这个方块，说明画布和图层工作正常。
-    const testRect = new Konva.Rect({
-      x: 20,
-      y: 20,
-      width: 50,
-      height: 50,
-      fill: 'red',
-      draggable: true
-    });
-    layer.add(testRect);
-    console.log('诊断 2: 已添加红色测试方块。');
-
-    const konvaText = new Konva.Text({
-      x: stageWidth / 2,
-      y: stageHeight / 2,
-      text: '你的文字',
-      fontSize: 30,
-      fontFamily: 'Arial',
-      fill: '#000000',
-      draggable: true
-    });
-    layer.add(konvaText);
-
-    // 【调试重点2：在应用偏移量之前和之后都打印日志】
-    console.log(`诊断 3: 文字创建后尺寸: width=${konvaText.width()}, height=${konvaText.height()}`);
-    
-    konvaText.offsetX(konvaText.width() / 2);
-    konvaText.offsetY(konvaText.height() / 2);
-
-    console.log(`诊断 4: 文字应用偏移后: offsetX=${konvaText.offsetX()}, offsetY=${konvaText.offsetY()}`);
-    console.log(`诊断 5: 文字最终坐标: x=${konvaText.x()}, y=${konvaText.y()}`);
-
-    // 使用延迟绘制，确保所有计算都已完成
+    // 等待一个宏任务周期，确保CSS已应用
     setTimeout(() => {
-      layer.draw();
-      console.log("诊断 6: 画布已绘制！请检查页面。");
-    }, 100);
+        const stageWidth = konvaContainer.clientWidth;
+        const stageHeight = konvaContainer.clientHeight;
+        
+        if (stageWidth === 0) {
+            console.error("Konva 致命错误: 容器尺寸在延迟后仍为0。请检查主题的CSS，确保 .canvas-wrapper 和 #konva-container 有明确的高度(height)和宽度(width/flex-basis)。");
+            return;
+        }
 
-    // ... 其余事件监听代码保持不变 ...
-    const textInput = sectionElement.querySelector('#text-input');
-    const fontSizeInput = sectionElement.querySelector('#font-size-input');
-    const colorInput = sectionElement.querySelector('#color-input');
-    const addToCartBtn = sectionElement.querySelector('#add-to-cart-btn');
+        console.log(`Konva: 容器尺寸最终确定为: ${stageWidth}x${stageHeight}`);
+        
+        const stage = new Konva.Stage({
+            container: konvaContainer,
+            width: stageWidth,
+            height: stageHeight,
+        });
 
-    textInput.addEventListener('input', (e) => { konvaText.text(e.target.value || ' '); konvaText.offsetX(konvaText.width() / 2); layer.draw(); });
-    fontSizeInput.addEventListener('input', (e) => { konvaText.fontSize(parseInt(e.target.value, 10)); konvaText.offsetX(konvaText.width() / 2); konvaText.offsetY(konvaText.height() / 2); layer.draw(); });
-    colorInput.addEventListener('input', (e) => { konvaText.fill(e.target.value); layer.draw(); });
-    addToCartBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const productForm = document.querySelector('form[action*="/cart/add"]');
-      const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
-      if (!variantIdInput || !variantIdInput.value) { alert('错误：找不到产品变体ID。'); return; }
-      const variantId = variantIdInput.value;
-      testRect.hide(); // 隐藏测试方块
-      backgroundRect.hide();
-      layer.draw();
-      const previewImage = stage.toDataURL({ pixelRatio: 2 });
-      backgroundRect.show();
-      testRect.show();
-      layer.draw();
-      const formData = { items: [{ id: variantId, quantity: 1, properties: { '_CustomTextPreview': previewImage, '定制文字': textInput.value, '字体大小': fontSizeInput.value, '字体颜色': colorInput.value }}] };
-      fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
-        .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
-        .catch(console.error);
-    });
+        const layer = new Konva.Layer();
+        stage.add(layer);
+
+        const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: stageWidth, height: stageHeight, fill: '#FFFFFF', stroke: '#dddddd', strokeWidth: 1 });
+        layer.add(backgroundRect);
+
+        const konvaText = new Konva.Text({
+            x: stageWidth / 2,
+            y: stageHeight / 2,
+            text: '你的文字',
+            fontSize: 30,
+            fontFamily: 'Arial',
+            fill: '#000000',
+            draggable: true
+        });
+        layer.add(konvaText);
+        konvaText.offsetX(konvaText.width() / 2);
+        konvaText.offsetY(konvaText.height() / 2);
+        
+        layer.draw();
+        console.log("Konva: 画布已绘制！");
+
+        // ... 其余事件监听代码保持不变 ...
+        const textInput = sectionElement.querySelector('#text-input');
+        const fontSizeInput = sectionElement.querySelector('#font-size-input');
+        const colorInput = sectionElement.querySelector('#color-input');
+        const addToCartBtn = sectionElement.querySelector('#add-to-cart-btn');
+
+        textInput.addEventListener('input', (e) => { konvaText.text(e.target.value || ' '); konvaText.offsetX(konvaText.width() / 2); layer.draw(); });
+        fontSizeInput.addEventListener('input', (e) => { konvaText.fontSize(parseInt(e.target.value, 10)); konvaText.offsetX(konvaText.width() / 2); konvaText.offsetY(konvaText.height() / 2); layer.draw(); });
+        colorInput.addEventListener('input', (e) => { konvaText.fill(e.target.value); layer.draw(); });
+        addToCartBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const productForm = document.querySelector('form[action*="/cart/add"]');
+            const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
+            if (!variantIdInput || !variantIdInput.value) { alert('错误：找不到产品变体ID。'); return; }
+            const variantId = variantIdInput.value;
+            backgroundRect.hide();
+            layer.draw();
+            const previewImage = stage.toDataURL({ pixelRatio: 2 });
+            backgroundRect.show();
+            layer.draw();
+            const formData = { items: [{ id: variantId, quantity: 1, properties: { '_CustomTextPreview': previewImage, '定制文字': textInput.value, '字体大小': fontSizeInput.value, '字体颜色': colorInput.value }}] };
+            fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
+              .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
+              .catch(console.error);
+        });
+
+    }, 0); // 使用 setTimeout(..., 0) 来将执行推迟到下一个事件循环
   };
 
   // ---- 终极启动器 (保持不变) ----
