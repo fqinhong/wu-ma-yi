@@ -43,8 +43,8 @@
     
     // 【最终决战策略：用JS直接设定尺寸】
     // 我们不再读取尺寸，而是强制写入尺寸，以覆盖主题JS的影响。
-    const fixedWidth = konvaContainer.parentElement.clientWidth || 500; // 尝试获取父容器宽度，如果失败则使用500
-    const fixedHeight = 300; // 直接定义一个固定的高度
+    const fixedWidth = konvaContainer.parentElement.clientWidth || 300; // 尝试获取父容器宽度，如果失败则使用500
+    const fixedHeight = 150; // 直接定义一个固定的高度
 
     konvaContainer.style.width = `${fixedWidth}px`;
     konvaContainer.style.height = `${fixedHeight}px`;
