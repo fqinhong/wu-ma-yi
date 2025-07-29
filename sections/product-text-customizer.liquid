@@ -75,7 +75,7 @@
   }
 </style>
 
-<script>
+{% comment %} <script>
   const initializeKonvaApp = (sectionElement) => {
     const konvaContainer = sectionElement.querySelector('#konva-container');
     if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
@@ -124,6 +124,110 @@
     console.log("Konva Log: 定制器已成功初始化并准备就绪！");
   };
 
+  const bootstrapper = () => {
+    const sectionId = 'shopify-section-{{ section.id }}';
+    const sectionElement = document.getElementById(sectionId);
+    if (!sectionElement) return;
+
+    const intervalId = setInterval(() => {
+      const konvaContainer = sectionElement.querySelector('#konva-container');
+      if (konvaContainer) {
+        clearInterval(intervalId);
+        initializeKonvaApp(sectionElement);
+      }
+    }, 100);
+    setTimeout(() => { clearInterval(intervalId); }, 5000);
+  };
+
+  document.addEventListener('turbo:load', bootstrapper);
+  document.addEventListener('shopify:section:load', bootstrapper);
+  bootstrapper();
+</script> {% endcomment %}
+
+<script>
+  // 将我们的核心初始化逻辑封装在一个独立的函数中
+  const initializeKonvaApp = (sectionElement) => {
+    const konvaContainer = sectionElement.querySelector('#konva-container');
+    if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
+    konvaContainer.dataset.initialized = 'true';
+
+    console.log("--- Konva 调试开始 ---");
+    console.log("1. 目标元素已找到，准备初始化...");
+
+    // ---- Konva 核心代码 ----
+    const stageWidth = konvaContainer.clientWidth;
+    const stageHeight = konvaContainer.clientHeight;
+    console.log(`2. 画布尺寸: ${stageWidth}w x ${stageHeight}h`);
+
+    const stage = new Konva.Stage({ container: konvaContainer, width: stageWidth, height: stageHeight });
+    const layer = new Konva.Layer();
+    stage.add(layer);
+
+    // 【调试1：暂时移除背景】为了确保背景没有覆盖文字，我们先不添加它
+    // const backgroundRect = new Konva.Rect({ ... });
+    // layer.add(backgroundRect);
+
+    const konvaText = new Konva.Text({
+      x: stageWidth / 2,
+      y: stageHeight / 2,
+      text: '你的文字',
+      fontSize: 30, // 【调试2：使用更大的字号】
+      fontFamily: 'Arial',
+      fill: 'red', // 【调试3：使用鲜艳的颜色】
+      draggable: true
+    });
+    layer.add(konvaText);
+    
+    // 重新计算偏移量
+    konvaText.offsetX(konvaText.width() / 2);
+    konvaText.offsetY(konvaText.height() / 2);
+    
+    console.log(`3. 文字对象创建: text='${konvaText.text()}', fontSize=${konvaText.fontSize()}`);
+    console.log(`4. 文字尺寸: ${konvaText.width()}w x ${konvaText.height()}h`);
+    console.log(`5. 文字坐标: x=${konvaText.x()}, y=${konvaText.y()}`);
+    console.log(`6. 文字偏移: offsetX=${konvaText.offsetX()}, offsetY=${konvaText.offsetY()}`);
+
+    // 【最终解决方案：强制延迟绘制】
+    // 这会把绘制命令推到浏览器任务队列的末尾，确保所有准备工作都已完成。
+    setTimeout(() => {
+      layer.draw();
+      console.log("7. 已执行延迟绘制！现在应该能看到文字了。");
+    }, 100); // 延迟100毫秒，非常可靠
+
+    // ---- 事件监听器 (保持不变) ----
+    const textInput = sectionElement.querySelector('#text-input');
+    const fontSizeInput = sectionElement.querySelector('#font-size-input');
+    const colorInput = sectionElement.querySelector('#color-input');
+    const addToCartBtn = sectionElement.querySelector('#add-to-cart-btn');
+
+    // 我们需要重新把背景加回来，以便在“添加到购物车”时可以隐藏它
+    const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: stageWidth, height: stageHeight, fill: '#FFFFFF', stroke: '#dddddd', strokeWidth: 1 });
+    layer.add(backgroundRect);
+    backgroundRect.moveToBottom(); // 确保背景在最底层
+
+    // ... 事件监听器代码保持原样 ...
+    textInput.addEventListener('input', (e) => { konvaText.text(e.target.value || ' '); konvaText.offsetX(konvaText.width() / 2); layer.draw(); });
+    fontSizeInput.addEventListener('input', (e) => { konvaText.fontSize(parseInt(e.target.value, 10)); konvaText.offsetX(konvaText.width() / 2); konvaText.offsetY(konvaText.height() / 2); layer.draw(); });
+    colorInput.addEventListener('input', (e) => { konvaText.fill(e.target.value); layer.draw(); });
+    addToCartBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const productForm = document.querySelector('form[action*="/cart/add"]');
+      const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
+      if (!variantIdInput || !variantIdInput.value) { alert('错误：找不到产品变体ID。'); return; }
+      const variantId = variantIdInput.value;
+      backgroundRect.hide();
+      layer.draw();
+      const previewImage = stage.toDataURL({ pixelRatio: 2 });
+      backgroundRect.show();
+      layer.draw();
+      const formData = { items: [{ id: variantId, quantity: 1, properties: { '_CustomTextPreview': previewImage, '定制文字': textInput.value, '字体大小': fontSizeInput.value, '字体颜色': colorInput.value }}] };
+      fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
+        .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
+        .catch(console.error);
+    });
+  };
+
+  // ---- 轮询启动器 (保持不变) ----
   const bootstrapper = () => {
     const sectionId = 'shopify-section-{{ section.id }}';
     const sectionElement = document.getElementById(sectionId);
