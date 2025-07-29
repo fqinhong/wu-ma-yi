@@ -139,7 +139,7 @@
                             {%- endfor -%}
                           {%- endif -%}
 
-                          {%- for property in item.properties -%}
+                          {% comment %} {%- for property in item.properties -%}
                             {%- assign property_first_char = property.first | slice: 0 -%}
                             {%- if property.last != blank and property_first_char != '_' -%}
                               <div class="product-option">
@@ -155,6 +155,32 @@
                                 </dd>
                               </div>
                             {%- endif -%}
+                          {%- endfor -%} {% endcomment %}
+
+                          {%- for property in item.properties -%}
+                            {%- assign property_first_char = property.first | slice: 0 -%}
+                            {%- if property.last != blank and property_first_char != '_' -%}
+
+                              {% comment %} --- 这是我们的最终修改 --- {% endcomment %}
+                              {% if property.first == 'CustomImagePreview' %}
+                                <div class="product-option" style="margin-top: 15px;">
+                                  <dt style="margin-bottom: 5px;"><strong>您的设计预览:</strong></dt>
+                                  <dd>
+                                    <a href="{{ property.last }}" target="_blank">
+                                      <img src="{{ property.last }}" alt="定制预览" width="70" height="20" style="max-width: 200px; border: 1px solid #ccc; border-radius: 4px;">
+                                    </a>
+                                  </dd>
+                                </div>
+                              {% else %}
+                                {% comment %} --- 对于所有其他属性，保持主题的原有行为 --- {% endcomment %}
+                                <div class="product-option">
+                                  <dt>{{ property.first }}:</dt>
+                                  <dd>{{ property.last }}</dd>
+                                </div>
+                              {% endif %}
+                              {% comment %} --- 修改结束 --- {% endcomment %}
+
+                            {%- endif -%}
                           {%- endfor -%}
                         </dl>
 
@@ -169,42 +195,6 @@
                           </li>
                         {%- endfor -%}
                       </ul>
-
-                      {% comment %} --- 开始诊断代码 --- {% endcomment %}
-
-                      {% for property in item.properties %}
-
-                        {% comment %} 1. 我们现在寻找不带下划线的新名称 {% endcomment %}
-                        {% if property.first == 'CustomImagePreview' %}
-                          <div style="margin-top: 10px; border: 2px dashed red; padding: 10px;">
-                            
-                            <p><strong>您的设计预览 (新):</strong></p>
-                            
-                            {% comment %} 2. 尝试显示图片 {% endcomment %}
-                            <img src="{{ property.last }}" alt="定制预览" style="max-width: 200px; border: 1px solid #ccc; display: block !important;">
-                            
-                            <p style="margin-top: 10px;"><strong>调试信息:</strong></p>
-                            
-                            {% comment %} 3. 把属性值作为文本打印出来，看看它是否存在。我们截取前100个字符。 {% endcomment %}
-                            <p style="font-size: 10px; word-break: break-all;">
-                              属性值 (截断): {{ property.last | truncate: 100 }}
-                            </p>
-
-                          </div>
-                        {% endif %}
-
-                      {% endfor %}
-
-                      {% comment %} 为了显示其他属性的列表，这段代码保持不变 {% endcomment %}
-                      <ul style="margin-top:10px; list-style-type: none; padding-left: 0;">
-                        {% for property in item.properties %}
-                          {% unless property.first startswith '_' or property.first == 'CustomImagePreview' %}
-                            <li>{{ property.first }}: {{ property.last }}</li>
-                          {% endunless %}
-                        {% endfor %}
-                      </ul>
-
-                      {% comment %} --- 结束诊断代码 --- {% endcomment %}
                     </td>
 
                     <td class="cart-item__totals right medium-hide large-up-hide">
