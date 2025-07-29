@@ -141,21 +141,35 @@
                             {%- endfor -%}
                           {%- endif -%}
 
+                          {% comment %} --- 这是最终的、修正后的代码 --- {% endcomment %}
                           {%- for property in item.properties -%}
                             {%- assign property_first_char = property.first | slice: 0 -%}
                             {%- if property.last != blank and property_first_char != '_' -%}
-                              <div class="product-option">
-                                <dt>{{ property.first }}:</dt>
-                                <dd>
-                                  {%- if property.last contains '/uploads/' -%}
-                                    <a href="{{ property.last }}" class="link" target="_blank">
-                                      {{ property.last | split: '/' | last }}
-                                    </a>
-                                  {%- else -%}
-                                    {{ property.last }}
-                                  {%- endif -%}
-                                </dd>
-                              </div>
+
+                              {% comment %} 
+                                【最终修正】
+                                我们使用 | strip | downcase 来移除所有空格并忽略大小写，
+                                确保进行最可靠的比较。
+                              {% endcomment %}
+                              {% if property.first | strip | downcase == 'customimagepreview' %}
+                                
+                                <div class="product-option" style="margin-top: 15px;">
+                                  <dt style="margin-bottom: 5px;"><strong>您的设计预览:</strong></dt>
+                                  <dd>
+                                    <img src="{{ property.last }}" alt="定制预览" width="70" height="20" style="max-width: 200px; border: 1px solid #ccc; border-radius: 4px;">
+                                  </dd>
+                                </div>
+
+                              {% else %}
+                                
+                                {% comment %} 对于所有其他属性，保持主题的原有行为 {% endcomment %}
+                                <div class="product-option">
+                                  <dt>{{ property.first }}:</dt>
+                                  <dd>{{ property.last }}</dd>
+                                </div>
+
+                              {% endif %}
+
                             {%- endif -%}
                           {%- endfor -%}
                         </dl>
