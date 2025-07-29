@@ -1,34 +1,84 @@
+{% comment %}
+  我们将 HTML, CSS 和 JavaScript 全部写在这个文件中，方便管理。
+{% endcomment %}
+
+<div class="page-width">
+  <div class="customizer-container">
+    
+    <div class="customizer-controls">
+      <h3>设计你的标签</h3>
+      
+      <div class="control-group">
+        <label for="text-input">输入文字:</label>
+        <input type="text" id="text-input" placeholder="你的文字">
+      </div>
+
+      <div class="control-group">
+        <label for="font-size-input">字体大小:</label>
+        <input type="number" id="font-size-input" value="20" min="8" max="72">
+      </div>
+
+      <div class="control-group">
+        <label for="color-input">字体颜色:</label>
+        <input type="color" id="color-input" value="#000000">
+      </div>
+
+      <button id="add-to-cart-btn" class="button button--primary">添加到购物车</button>
+    </div>
+
+    <div class="canvas-wrapper">
+      <div id="konva-container"></div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .customizer-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin: 40px 0;
+    padding-top: 40px;
+    border-top: 1px solid #e5e5e5;
+  }
+  .customizer-controls {
+    flex: 1;
+    min-width: 250px;
+  }
+  .canvas-wrapper {
+    flex: 2;
+    min-width: 400px;
+    background-color: #f7f7f7;
+    border: 1px solid #ccc;
+    height: 200px; /* 画布容器高度 */
+  }
+  #konva-container {
+    width: 100%;
+    height: 100%;
+  }
+  .control-group {
+    margin-bottom: 20px;
+  }
+  .control-group label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  .control-group input {
+    width: 100%;
+    padding: 8px;
+  }
+</style>
+
 <script>
-  // 将所有逻辑封装起来，防止全局变量污染
-  const setupKonvaCustomizer = () => {
-    // ---- 安全检查与初始化 ----
-    // 1. 检查我们的section是否在当前页面上，如果不在就什么都不做
-    const customizerSection = document.querySelector('#shopify-section-{{ section.id }}');
-    if (!customizerSection) return;
-
-    // 2. 找到画布容器
-    const konvaContainer = customizerSection.querySelector('#konva-container');
-    if (!konvaContainer) {
-      console.error("Konva Error: 在 section '{{ section.id }}' 中找不到 #konva-container 元素。");
-      return;
-    }
-
-    // 3. 防止重复初始化 (非常重要！)
-    // 如果在Turbo导航下重复加载，我们不希望创建一堆新的画布
-    if (konvaContainer.dataset.initialized === 'true') {
-      console.log("Konva Info: 定制器已经初始化，跳过。");
-      return;
-    }
-    konvaContainer.dataset.initialized = 'true'; // 标记为已初始化
-
-    console.log("Konva Log: 开始初始化定制器...");
-
-    // ---- Konva 核心代码 (与之前类似) ----
-    const stageWidth = konvaContainer.clientWidth;
-    const stageHeight = konvaContainer.clientHeight;
+  document.addEventListener('DOMContentLoaded', function() {
+    // --- 1. 初始化 Konva 画布 ---
+    const container = document.querySelector('#konva-container');
+    const stageWidth = container.clientWidth;
+    const stageHeight = container.clientHeight;
 
     const stage = new Konva.Stage({
-      container: konvaContainer, // 直接传递元素引用更安全
+      container: 'konva-container',
       width: stageWidth,
       height: stageHeight,
     });
@@ -36,12 +86,19 @@
     const layer = new Konva.Layer();
     stage.add(layer);
 
+    // --- 2. 创建一个代表标签背景的矩形 ---
     const backgroundRect = new Konva.Rect({
-      x: 0, y: 0, width: stageWidth, height: stageHeight,
-      fill: '#FFFFFF', stroke: '#dddddd', strokeWidth: 1
+      x: 0,
+      y: 0,
+      width: stageWidth,
+      height: stageHeight,
+      fill: '#FFFFFF', // 标签底色
+      stroke: '#dddddd', // 边框颜色
+      strokeWidth: 1
     });
     layer.add(backgroundRect);
 
+    // --- 3. 创建核心的文本对象 ---
     const konvaText = new Konva.Text({
       x: stageWidth / 2,
       y: stageHeight / 2,
@@ -49,76 +106,108 @@
       fontSize: 20,
       fontFamily: 'Arial',
       fill: '#000000',
-      draggable: true,
+      draggable: true, // 让文字可以被拖动
     });
-    layer.add(konvaText);
+    // 让文本居中
     konvaText.offsetX(konvaText.width() / 2);
     konvaText.offsetY(konvaText.height() / 2);
+    layer.add(konvaText);
     
-    layer.draw();
-    console.log("Konva Log: 画布已成功绘制！");
+    layer.draw(); // 首次绘制
 
-    // --- 事件监听 ---
-    const textInput = customizerSection.querySelector('#text-input');
-    const fontSizeInput = customizerSection.querySelector('#font-size-input');
-    const colorInput = customizerSection.querySelector('#color-input');
-    const addToCartBtn = customizerSection.querySelector('#add-to-cart-btn');
+    // --- 4. 关联 HTML 控件和 Konva 文本对象 ---
+    const textInput = document.getElementById('text-input');
+    const fontSizeInput = document.getElementById('font-size-input');
+    const colorInput = document.getElementById('color-input');
 
+    // 监听文本输入
     textInput.addEventListener('input', (e) => {
-      konvaText.text(e.target.value || ' ');
-      konvaText.offsetX(konvaText.width() / 2);
+      konvaText.text(e.target.value);
+      konvaText.offsetX(konvaText.width() / 2); // 保持居中
       layer.draw();
     });
 
+    // 监听字体大小变化
     fontSizeInput.addEventListener('input', (e) => {
       konvaText.fontSize(parseInt(e.target.value, 10));
-      konvaText.offsetX(konvaText.width() / 2);
+      konvaText.offsetX(konvaText.width() / 2); // 保持居中
       konvaText.offsetY(konvaText.height() / 2);
       layer.draw();
     });
 
+    // 监听颜色变化
     colorInput.addEventListener('input', (e) => {
       konvaText.fill(e.target.value);
       layer.draw();
     });
     
-    // --- 添加到购物车逻辑 ---
-    addToCartBtn.addEventListener('click', (e) => {
+    // --- 5. 添加到购物车逻辑 ---
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    addToCartBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      // 在Shopify 2.0主题中，产品表单可能在section之外，所以我们从整个文档中查找
-      const productForm = document.querySelector('form[action*="/cart/add"]');
-      if (!productForm) {
-        alert('错误：找不到产品表单。'); return;
-      }
-      const variantIdInput = productForm.querySelector('[name="id"]');
-      if (!variantIdInput || !variantIdInput.value) {
-        alert('错误：找不到产品变体ID。'); return;
+
+      // 获取当前产品页面的变体ID
+      const variantId = document.querySelector('input[name="id"]').value;
+      if (!variantId) {
+        alert('请先选择一个产品规格！');
+        return;
       }
       
-      const variantId = variantIdInput.value;
+      // 生成预览图 (Base64格式)
+      // 我们暂时将背景矩形隐藏，只导出文本的图像
       backgroundRect.hide();
       layer.draw();
-      const previewImage = stage.toDataURL({ pixelRatio: 2 });
-      backgroundRect.show();
+      const previewImage = stage.toDataURL({ pixelRatio: 2 }); // pixelRatio 提高清晰度
+      backgroundRect.show(); // 恢复显示
       layer.draw();
 
-      let formData = { /* ... 保持不变 ... */ };
-      fetch('/cart/add.js', { /* ... 保持不变 ... */ });
+      // 准备要发送到购物车的数据
+      let formData = {
+        'items': [{
+          'id': variantId,
+          'quantity': 1, // 暂时硬编码为1，你可以添加一个数量输入框
+          'properties': {
+            '_CustomTextPreview': previewImage,
+            '定制文字': textInput.value,
+            '字体大小': fontSizeInput.value,
+            '字体颜色': colorInput.value
+          }
+        }]
+      };
+
+      // 使用 Shopify Ajax API 添加到购物车
+      fetch('/cart/add.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status) {
+            alert('添加失败: ' + data.description);
+        } else {
+            // 添加成功后，跳转到购物车页面
+            window.location.href = '/cart';
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        alert('添加时发生错误，请查看控制台。');
+      });
     });
-  };
-
-  // --- 全能的事件监听器 ---
-  // 监听 Turbo Drive 的页面加载
-  document.addEventListener('turbo:load', setupKonvaCustomizer);
-
-  // 监听 Shopify 主题编辑器的 section 加载
-  document.addEventListener('shopify:section:load', setupKonvaCustomizer);
-
-  // 为防止在某些罕见情况下事件被错过，如果DOM已经加载完成，也尝试直接运行一次
-  if (document.readyState === 'interactive' || document.readyState === 'complete') {
-    setupKonvaCustomizer();
-  } else {
-    // 标准的 DOM 加载事件（作为后备）
-    document.addEventListener('DOMContentLoaded', setupKonvaCustomizer);
-  }
+  });
 </script>
+
+{% schema %}
+{
+  "name": "Product Text Customizer",
+  "settings": [],
+  "presets": [
+    {
+      "name": "Product Text Customizer"
+    }
+  ]
+}
+{% endschema %}
