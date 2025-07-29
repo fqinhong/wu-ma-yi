@@ -95,7 +95,13 @@
             const variantId = variantIdInput.value;
             backgroundRect.hide();
             layer.draw();
-            const previewImage = stage.toDataURL({ pixelRatio: 1 });
+            
+            const previewImage = stage.toDataURL({ 
+                mimeType: 'image/jpeg', // 告诉 Konva 生成 JPEG 图像
+                quality: 0.7,           // 设定压缩质量 (0.7 是一个很好的起点，可以在 0.1 到 1 之间调整)
+                pixelRatio: 1           // 确保 pixelRatio 仍然是 1
+            });
+
             backgroundRect.show();
             layer.draw();
             const formData = { items: [{ id: variantId, quantity: 1, properties: { '_CustomTextPreview': previewImage, '定制文字': textInput.value, '字体大小': fontSizeInput.value, '字体颜色': colorInput.value }}] };
