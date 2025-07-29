@@ -87,7 +87,7 @@
         textInput.addEventListener('input', (e) => { konvaText.text(e.target.value || ' '); konvaText.offsetX(konvaText.width() / 2); layer.draw(); });
         fontSizeInput.addEventListener('input', (e) => { konvaText.fontSize(parseInt(e.target.value, 10)); konvaText.offsetX(konvaText.width() / 2); konvaText.offsetY(konvaText.height() / 2); layer.draw(); });
         colorInput.addEventListener('input', (e) => { konvaText.fill(e.target.value); layer.draw(); });
-        addToCartBtn.addEventListener('click', (e) => {
+        {% comment %} addToCartBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const productForm = document.querySelector('form[action*="/cart/add"]');
             const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
@@ -95,7 +95,7 @@
             const variantId = variantIdInput.value;
             backgroundRect.hide();
             layer.draw();
-            
+
             const previewImage = stage.toDataURL({ 
                 mimeType: 'image/jpeg', // 告诉 Konva 生成 JPEG 图像
                 quality: 0.7,           // 设定压缩质量 (0.7 是一个很好的起点，可以在 0.1 到 1 之间调整)
@@ -108,7 +108,75 @@
             fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
               .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
               .catch(console.error);
+        }); {% endcomment %}
+
+        // 请用这个版本的代码完整替换您现有的 addToCartBtn 事件监听器
+
+        addToCartBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const productForm = document.querySelector('form[action*="/cart/add"]');
+            const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
+            if (!variantIdInput || !variantIdInput.value) { 
+                alert('错误：找不到产品变体ID。'); 
+                return; 
+            }
+            const variantId = variantIdInput.value;
+
+            // 为了生成预览，我们暂时隐藏画布的背景和边框
+            backgroundRect.hide();
+            layer.draw();
+
+            // 【极限压缩代码】
+            // 使用 JPEG 格式，并把质量调低 (例如 0.6)，来强制减小文件大小
+            // 画布尺寸已经在前面被设定为较小的值 (例如 300x150)
+            const previewImage = stage.toDataURL({ 
+                mimeType: 'image/jpeg', // 强制使用 JPEG
+                quality: 0.6,           // 使用较低的质量来确保字符串长度足够短
+                pixelRatio: 1           // 确保 pixelRatio 为 1
+            });
+
+            // 【关键的自我诊断】在F12控制台打印出压缩后的字符串长度
+            console.log('压缩后的图像数据长度:', previewImage.length);
+
+            // 恢复背景
+            backgroundRect.show();
+            layer.draw();
+
+            // 获取其他文本属性的值
+            const textInput = sectionElement.querySelector('#text-input');
+            const fontSizeInput = sectionElement.querySelector('#font-size-input');
+            const colorInput = sectionElement.querySelector('#color-input');
+
+            const formData = {
+                items: [{
+                    id: variantId,
+                    quantity: 1,
+                    properties: {
+                        // 我们现在同时发送图片和文本属性
+                        '_CustomTextPreview': previewImage,
+                        '定制文字': textInput.value,
+                        '字体大小': fontSizeInput.value, 
+                        '字体颜色': colorInput.value
+                    }
+                }]
+            };
+
+            fetch('/cart/add.js', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(formData) 
+            })
+            .then(res => res.json())
+            .then(data => { 
+                if (!data.status) { 
+                    window.location.href = '/cart'; 
+                } else { 
+                    alert('添加失败: ' + data.description); 
+                }
+            })
+            .catch(console.error);
         });
+        
     }, 100); // 稍微增加延迟，给JS样式应用留出时间
   };
 
