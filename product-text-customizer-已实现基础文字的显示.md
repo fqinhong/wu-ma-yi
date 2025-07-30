@@ -10,32 +10,6 @@
     <div class="customizer-controls w-full md:w-1/3">
       <h3 class="text-xl font-bold mb-6">设计你的标签</h3>
       <div class="control-group mb-5">
-  <label class="block text-sm font-medium text-gray-700 mb-2">1. 选择标签尺寸:</label>
-  <div id="size-selector" class="flex items-center gap-4">
-    
-    <div>
-      <input type="radio" id="size-60x15" name="label-size" value="60x15" class="hidden peer" checked>
-      <label for="size-60x15" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100">                           
-        <div class="block">
-          <div class="w-full text-sm font-semibold">2.36" x 0.59"</div>
-          <div class="w-full text-xs">60 x 15 mm</div>
-        </div>
-      </label>
-    </div>
-
-    <div>
-      <input type="radio" id="size-60x20" name="label-size" value="60x20" class="hidden peer">
-      <label for="size-60x20" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100">
-        <div class="block">
-          <div class="w-full text-sm font-semibold">2.36" x 0.79"</div>
-          <div class="w-full text-xs">60 x 20 mm</div>
-        </div>
-      </label>
-    </div>
-
-  </div>
-</div>
-      <div class="control-group mb-5">
         <label for="text-input" class="block text-sm font-medium text-gray-700 mb-1">输入文字:</label>
         <input type="text" id="text-input" placeholder="你的文字" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
       </div>
@@ -96,48 +70,7 @@
         const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: stageWidth, height: stageHeight, fill: '#FFFFFF', stroke: '#dddddd', strokeWidth: 1 });
         layer.add(backgroundRect);
 
-        const sizeSelector = sectionElement.querySelector('#size-selector');
-        // 定义我们的显示尺寸比例
-        const baseWidth = konvaContainer.parentElement.clientWidth || 500;
-        const sizeRatios = {
-          '60x15': 15 / 60, // 高度是宽度的 0.25 倍
-          '60x20': 20 / 60  // 高度是宽度的 0.33 倍
-        };
-        
-        // 函数：用于更新画布尺寸
-        const updateCanvasSize = (newSizeValue) => {
-          const newRatio = sizeRatios[newSizeValue];
-          const newHeight = baseWidth * newRatio;
-          
-          // 更新 Stage 和背景矩形的尺寸
-          stage.width(baseWidth);
-          stage.height(newHeight);
-          backgroundRect.width(baseWidth);
-          backgroundRect.height(newHeight);
-        
-          // 【重要】更新文字的位置，使其保持在新的中心点
-          konvaText.position({
-            x: baseWidth / 2,
-            y: newHeight / 2
-          });
-          
-          // 重新绘制所有内容
-          layer.draw();
-          console.log(`Canvas resized for ${newSizeValue}. New dimensions: ${baseWidth}x${newHeight}`);
-        };
-        
-        // 添加事件监听器
-        sizeSelector.addEventListener('change', (e) => {
-          if (e.target.name === 'label-size') {
-            updateCanvasSize(e.target.value);
-          }
-        });
-        
-        // 初始化时，根据默认选中的尺寸设置一次画布
-        const initialSize = sizeSelector.querySelector('input[name="label-size"]:checked').value;
-        updateCanvasSize(initialSize);
-
-        const konvaText = new Konva.Text({ x: stage.width() / 2, y: stage.height() / 2, text: '你的文字', fontSize: 30, fontFamily: 'Arial', fill: '#000000', draggable: true });
+        const konvaText = new Konva.Text({ x: stageWidth / 2, y: stageHeight / 2, text: '你的文字', fontSize: 30, fontFamily: 'Arial', fill: '#000000', draggable: true });
         layer.add(konvaText);
         konvaText.offsetX(konvaText.width() / 2);
         konvaText.offsetY(konvaText.height() / 2);
@@ -154,8 +87,31 @@
         textInput.addEventListener('input', (e) => { konvaText.text(e.target.value || ' '); konvaText.offsetX(konvaText.width() / 2); layer.draw(); });
         fontSizeInput.addEventListener('input', (e) => { konvaText.fontSize(parseInt(e.target.value, 10)); konvaText.offsetX(konvaText.width() / 2); konvaText.offsetY(konvaText.height() / 2); layer.draw(); });
         colorInput.addEventListener('input', (e) => { konvaText.fill(e.target.value); layer.draw(); });
+        {% comment %} addToCartBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const productForm = document.querySelector('form[action*="/cart/add"]');
+            const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
+            if (!variantIdInput || !variantIdInput.value) { alert('错误：找不到产品变体ID。'); return; }
+            const variantId = variantIdInput.value;
+            backgroundRect.hide();
+            layer.draw();
 
-        // 这是最终修正版的 addToCartBtn 事件监听器
+            const previewImage = stage.toDataURL({ 
+                mimeType: 'image/jpeg', // 告诉 Konva 生成 JPEG 图像
+                quality: 0.7,           // 设定压缩质量 (0.7 是一个很好的起点，可以在 0.1 到 1 之间调整)
+                pixelRatio: 1           // 确保 pixelRatio 仍然是 1
+            });
+
+            backgroundRect.show();
+            layer.draw();
+            const formData = { items: [{ id: variantId, quantity: 1, properties: { '_CustomTextPreview': previewImage, '定制文字': textInput.value, '字体大小': fontSizeInput.value, '字体颜色': colorInput.value }}] };
+            fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
+              .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
+              .catch(console.error);
+        }); {% endcomment %}
+
+        // 请用这个版本的代码完整替换您现有的 addToCartBtn 事件监听器
+
         addToCartBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const productForm = document.querySelector('form[action*="/cart/add"]');
@@ -164,46 +120,47 @@
                 alert('错误：找不到产品变体ID。'); 
                 return; 
             }
-          
             const variantId = variantIdInput.value;
-        
-            // 【关键修正】
-            // 我们不再需要隐藏任何东西。我们就是要导出带有白色背景的完整图片。
-            // 所以下面这两行代码被删除了：
-            // backgroundRect.hide();
-            // backgroundRect.show();
-        
-            // 为了确保画布是最新状态，可以保留一次 draw 调用
+
+            // 为了生成预览，我们暂时隐藏画布的背景和边框
+            backgroundRect.hide();
             layer.draw();
-        
+
+            // 【极限压缩代码】
+            // 使用 JPEG 格式，并把质量调低 (例如 0.6)，来强制减小文件大小
+            // 画布尺寸已经在前面被设定为较小的值 (例如 300x150)
             const previewImage = stage.toDataURL({ 
-                mimeType: 'image/jpeg',
-                quality: 0.7,
-                pixelRatio: 1
+                mimeType: 'image/jpeg', // 强制使用 JPEG
+                quality: 0.6,           // 使用较低的质量来确保字符串长度足够短
+                pixelRatio: 1           // 确保 pixelRatio 为 1
             });
-        
-            // 重新获取输入框的值
-            const selectedSize = sizeSelector.querySelector('input[name="label-size"]:checked').value;
+
+            // 【关键的自我诊断】在F12控制台打印出压缩后的字符串长度
+            console.log('压缩后的图像数据长度:', previewImage.length);
+
+            // 恢复背景
+            backgroundRect.show();
+            layer.draw();
+
+            // 获取其他文本属性的值
             const textInput = sectionElement.querySelector('#text-input');
             const fontSizeInput = sectionElement.querySelector('#font-size-input');
             const colorInput = sectionElement.querySelector('#color-input');
 
-
-            // 使用正确的属性名 'CustomTextPreview'
             const formData = {
                 items: [{
-                  id: variantId,
-                  quantity: 1,
-                  properties: {
-                    'CustomTextPreview': previewImage,
-                    '尺寸': selectedSize, // <--- 添加尺寸属性
-                    '定制文字': textInput.value,
-                    '字体大小': fontSizeInput.value, 
-                    '字体颜色': colorInput.value
-                  }
+                    id: variantId,
+                    quantity: 1,
+                    properties: {
+                        // 我们现在同时发送图片和文本属性
+                        'CustomTextPreview': previewImage,
+                        '定制文字': textInput.value,
+                        '字体大小': fontSizeInput.value, 
+                        '字体颜色': colorInput.value
+                    }
                 }]
-              };
-        
+            };
+
             fetch('/cart/add.js', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
