@@ -1,10 +1,8 @@
 {% comment %}
-  版本 3.5.1: 外部 SVG 符号功能 - 终极完整修复版
-  - 承诺: 本文件包含截至目前所有功能的完整、无省略的代码。
-  - 核心功能: 使用外部 SVG 文件作为符号源，通过 fetch API 加载并解析。
-  - 操作指南:
-    1. 在下面的 `symbolData` 对象中，用您的 SVG 文件名更新 `file` 属性。
-    2. 将对应的 SVG 文件上传到您 Shopify 主题的 `Assets` 文件夹。
+  版本 3.5.2: 外部 SVG 功能 - 终极完整修复版
+  - 修复: 解决了 "Liquid syntax error" 的致命错误，分离了 Liquid 和 JavaScript 的职责。
+  - 更新: 现在通过一个独立的 Liquid 循环预先生成所有 asset_url，供 JavaScript 安全使用。
+  - 承诺: 本文件包含截至目前所有功能的完整、无省略、可直接运行的代码。
 {% endcomment %}
 
 <!-- 字体加载 -->
@@ -61,8 +59,18 @@ const initializeKonvaApp = (sectionElement) => {
   if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
   konvaContainer.dataset.initialized = 'true';
 
-  console.log("Konva: 初始化开始 (版本 3.5.1)...");
+  console.log("Konva: 初始化开始 (版本 3.5.2)...");
+
+  // [修复] 第 1 步: 在 Liquid 中定义所有需要 URL 的文件名
+  {%- assign all_symbol_files = "symbol_heart_solid.svg,symbol_heart_outline.svg,symbol_nature_star.svg,symbol_nature_cloud.svg,symbol_nature_leaf.svg" | split: "," -%}
   
+  // [修复] 第 2 步: 让 Liquid 生成一个包含所有 URL 的 JS 对象
+  const allSymbolUrls = {
+    {%- for file in all_symbol_files -%}
+      "{{ file }}": "{{ file | asset_url }}"{%- unless forloop.last -%},{%- endunless -%}
+    {%- endfor -%}
+  };
+
   const symbolData = {
     'Social': [
       { name: 'tiktok', file: 'icon-tiktok.svg' },
@@ -119,16 +127,6 @@ const initializeKonvaApp = (sectionElement) => {
   const populateSymbolSelectors = () => {
     const categoryGrid = symbolControls.querySelector('#symbol-category-grid');
     const symbolGridContainer = symbolControls.querySelector('#symbol-grid-container');
-    const liquidSvgs = {
-      {%- for category_name, symbols in symbolData -%}
-        '{{ category_name }}': {
-          {%- for symbol in symbols -%}
-            '{{ symbol.file }}': '{{ symbol.file | asset_url }}'{%- unless forloop.last -%},{%- endunless -%}
-          {%- endfor -%}
-        }{%- unless forloop.last -%},{%- endunless -%}
-      {%- endfor -%}
-    };
-
     for (const categoryName in symbolData) {
       const categoryButton = document.createElement('button');
       categoryButton.type = 'button';
@@ -136,7 +134,6 @@ const initializeKonvaApp = (sectionElement) => {
       categoryButton.textContent = categoryName;
       categoryButton.dataset.category = categoryName;
       categoryGrid.appendChild(categoryButton);
-      
       const grid = document.createElement('div');
       grid.id = `symbol-grid-${categoryName}`;
       grid.className = 'symbol-grid hidden flex flex-wrap gap-2';
@@ -145,9 +142,15 @@ const initializeKonvaApp = (sectionElement) => {
         symbolWrapper.className = 'symbol-item';
         symbolWrapper.title = symbol.name;
         symbolWrapper.dataset.name = symbol.name;
-        const imgUrl = liquidSvgs[categoryName][symbol.file];
-        symbolWrapper.dataset.url = imgUrl;
-        symbolWrapper.innerHTML = `<img src="${imgUrl}" alt="${symbol.name}" />`;
+        // [修复] 第 3 步: 从预先生成的 allSymbolUrls 对象中查找 URL
+        const imgUrl = allSymbolUrls[symbol.file];
+        if (imgUrl) {
+          symbolWrapper.dataset.url = imgUrl;
+          symbolWrapper.innerHTML = `<img src="${imgUrl}" alt="${symbol.name}" />`;
+        } else {
+          console.warn(`找不到符号文件的 URL: ${symbol.file}`);
+          symbolWrapper.innerHTML = `<span>?</span>`; // 显示一个问号作为回退
+        }
         grid.appendChild(symbolWrapper);
       });
       symbolGridContainer.appendChild(grid);
@@ -187,7 +190,7 @@ const initializeKonvaApp = (sectionElement) => {
   const categoryView = symbolControls.querySelector('#symbol-category-view');
   const pickerView = symbolControls.querySelector('#symbol-picker-view');
   const currentCategoryNameEl = symbolControls.querySelector('#current-category-name');
-  symbolControls.addEventListener('click', (e) => { const categoryBtn = e.target.closest('.symbol-category-btn'); const backBtn = e.target.closest('#back-to-categories-btn'); const symbolItem = e.target.closest('.symbol-item'); if (categoryBtn) { const categoryName = categoryBtn.dataset.category; categoryView.classList.add('hidden'); pickerView.classList.remove('hidden'); currentCategoryNameEl.textContent = categoryName; symbolControls.querySelectorAll('.symbol-grid').forEach(grid => grid.classList.add('hidden')); symbolControls.querySelector(`#symbol-grid-${categoryName}`).classList.remove('hidden'); } if (backBtn) { pickerView.classList.add('hidden'); categoryView.classList.remove('hidden'); } if (symbolItem) { const svgUrl = symbolItem.dataset.url; const symbolName = symbolItem.dataset.name; addOrUpdateSymbol(svgUrl, symbolName); } });
+  symbolControls.addEventListener('click', (e) => { const categoryBtn = e.target.closest('.symbol-category-btn'); const backBtn = e.target.closest('#back-to-categories-btn'); const symbolItem = e.target.closest('.symbol-item'); if (categoryBtn) { const categoryName = categoryBtn.dataset.category; categoryView.classList.add('hidden'); pickerView.classList.remove('hidden'); currentCategoryNameEl.textContent = categoryName; symbolControls.querySelectorAll('.symbol-grid').forEach(grid => grid.classList.add('hidden')); symbolControls.querySelector(`#symbol-grid-${categoryName}`).classList.remove('hidden'); } if (backBtn) { pickerView.classList.add('hidden'); categoryView.classList.remove('hidden'); } if (symbolItem) { const svgUrl = symbolItem.dataset.url; const symbolName = symbolItem.dataset.name; if(svgUrl) { addOrUpdateSymbol(svgUrl, symbolName); } } });
   
   mainLayer.on('dragmove', (e) => { const GUIDELINE_OFFSET = 5; guideLayer.find('.guid-line').forEach((l) => l.destroy()); const lineGuideStops = getLineGuideStops(); const itemBounds = getObjectSnappingEdges(e.target); const guides = []; lineGuideStops.vertical.forEach((lineGuide) => { itemBounds.vertical.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.x(Math.round(e.target.x() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'V' }); } }); }); lineGuideStops.horizontal.forEach((lineGuide) => { itemBounds.horizontal.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.y(Math.round(e.target.y() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'H' }); } }); }); drawGuides(guides); guideLayer.batchDraw(); });
   mainLayer.on('dragend', () => { guideLayer.find('.guid-line').forEach((l) => l.destroy()); guideLayer.batchDraw(); });
@@ -231,7 +234,7 @@ const initializeKonvaApp = (sectionElement) => {
   if(initialTextSwatch) { textObjects.forEach(textNode => textNode.fill(initialTextSwatch.dataset.colorHex)); }
   repositionAllTexts();
   stage.batchDraw();
-  console.log("Konva: 初始化流程完成！ (版本 3.5.1)");
+  console.log("Konva: 初始化流程完成！ (版本 3.5.2)");
 };
   
 const bootstrapper = () => {
