@@ -1,7 +1,8 @@
 {% comment %}
-  版本 3.4.1: Symbol (符号) 定制功能 - 完整修复版
-  - 恢复了所有被省略的 HTML 和 JavaScript 代码段。
-  - 这是 Symbol (符号) 定制功能的完整、无省略、可运行版本。
+  版本 3.3.2: 终极修复版
+  - 恢复了 bootstrapper 和 schema 的完整代码，解决了画布不显示的致命错误。
+  - 完整、无省略地实现了智能文本颜色选择功能。
+  - 这是截至目前所有功能的完整、稳定、可运行版本。
 {% endcomment %}
 
 <!-- 字体加载 -->
@@ -21,12 +22,6 @@
   }
   .color-swatch.disabled {
     @apply grayscale opacity-50 cursor-not-allowed;
-  }
-  .symbol-item {
-    @apply w-12 h-12 p-2 border rounded-md flex items-center justify-center cursor-pointer transition hover:bg-gray-100 hover:border-indigo-600;
-  }
-  .symbol-item svg {
-    @apply w-full h-full;
   }
 </style>
 
@@ -71,24 +66,6 @@
         <input type="number" id="font-size-input" value="20" min="8" max="72" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
       </div>
 
-      <!-- 7. Symbol (符号) 定制 -->
-      <div class="control-group mb-5">
-        <label class="block text-sm font-medium text-gray-700 mb-2">7. 选择一个符号 (可选):</label>
-        <div id="symbol-controls" class="border p-3 rounded-md">
-          <div id="symbol-category-view">
-            <p class="text-xs text-gray-500 mb-2">选择一个分类:</p>
-            <div id="symbol-category-grid" class="flex flex-wrap gap-2"></div>
-          </div>
-          <div id="symbol-picker-view" class="hidden">
-            <div class="flex items-center justify-between mb-2">
-              <button type="button" id="back-to-categories-btn" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">← 返回分类</button>
-              <p id="current-category-name" class="text-xs text-gray-500 font-bold"></p>
-            </div>
-            <div id="symbol-grid-container" class="flex flex-wrap gap-2"></div>
-          </div>
-        </div>
-      </div>
-
       <button id="add-to-cart-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">添加到购物车</button>
     </div>
 
@@ -104,18 +81,8 @@ const initializeKonvaApp = (sectionElement) => {
   if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
   konvaContainer.dataset.initialized = 'true';
 
-  console.log("Konva: 初始化开始 (版本 3.4.1 - 终极完整版)...");
+  console.log("Konva: 初始化开始 (版本 3.3.2 - 终极修复版)...");
 
-  const symbolData = {
-    'Hearts': [
-      { name: 'Solid Heart', path: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'},
-      { name: 'Heart Outline', path: 'M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z'}
-    ],
-    'Nature': [
-      { name: 'Star', path: 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'},
-      { name: 'Cloud', path: 'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z'}
-    ]
-  };
   const colorConflictMap = {
     'Black': ['Black', 'Brown', 'Blue'], 'White': ['White', 'Apple Green'], 'Red': ['Red'],
     'Blue': ['Blue', 'Black'], 'Brown': ['Brown', 'Black'], 'Apple Green': ['Apple Green', 'White']
@@ -129,7 +96,6 @@ const initializeKonvaApp = (sectionElement) => {
   const textRowsContainer = sectionElement.querySelector('#text-rows-container');
   const fontSizeInput = sectionElement.querySelector('#font-size-input');
   const textColorSelector = sectionElement.querySelector('#text-color-selector');
-  const symbolControls = sectionElement.querySelector('#symbol-controls');
   const addToCartBtn = sectionElement.querySelector('#add-to-cart-btn');
 
   const baseWidth = konvaContainer.parentElement.clientWidth || 500;
@@ -151,13 +117,13 @@ const initializeKonvaApp = (sectionElement) => {
   const NUM_TEXT_ROWS = 3;
   for (let i = 0; i < NUM_TEXT_ROWS; i++) {
     const textNode = new Konva.Text({
-      x: stage.width() / 2, y: 0, text: i === 0 ? '第一行文字' : '',
+      x: stage.width() / 2, y: 0,
+      text: i === 0 ? '第一行文字' : '',
       fontSize: 20, fontFamily: 'Roboto', fill: '#000000', draggable: true, name: `text-line-${i}`
     });
     textObjects.push(textNode);
     mainLayer.add(textNode);
   }
-  let currentSymbol = null;
 
   const repositionAllTexts = () => { const activeTexts = textObjects.filter(t => t.text()); if (activeTexts.length === 0) return; const totalHeight = activeTexts.reduce((sum, t) => sum + t.height(), 0); let startY = (stage.height() - totalHeight) / 2; textObjects.forEach(textNode => { textNode.x(stage.width() / 2); textNode.offsetX(textNode.width() / 2); if (textNode.text()) { textNode.y(startY); textNode.offsetY(0); startY += textNode.height(); } else { textNode.y(-1000); } }); mainLayer.batchDraw(); };
   const updateCanvasSize = (newSizeValue) => { const newRatio = sizeRatios[newSizeValue]; const newHeight = baseWidth * newRatio; konvaContainer.style.height = `${newHeight}px`; stage.height(newHeight); backgroundRect.height(newHeight); colorOverlayRect.height(newHeight); repositionAllTexts(); stage.batchDraw(); };
@@ -166,25 +132,31 @@ const initializeKonvaApp = (sectionElement) => {
   const getLineGuideStops = () => { const vertical = [0, stage.width() / 2, stage.width()]; const horizontal = [0, stage.height() / 2, stage.height()]; return { vertical, horizontal }; }
   const getObjectSnappingEdges = (node) => { const box = node.getClientRect(); const absPos = node.absolutePosition(); return { vertical: [ { guide: Math.round(box.x), offset: Math.round(absPos.x - box.x), snap: 'start' }, { guide: Math.round(box.x + box.width / 2), offset: Math.round(absPos.x - box.x - box.width / 2), snap: 'center' }, { guide: Math.round(box.x + box.width), offset: Math.round(absPos.x - box.x - box.width), snap: 'end' }, ], horizontal: [ { guide: Math.round(box.y), offset: Math.round(absPos.y - box.y), snap: 'start' }, { guide: Math.round(box.y + box.height / 2), offset: Math.round(absPos.y - box.y - box.height / 2), snap: 'center' }, { guide: Math.round(box.y + box.height), offset: Math.round(absPos.y - box.y - box.height), snap: 'end' }, ], }; }
   const drawGuides = (guides) => { guides.forEach((lg) => { let line = new Konva.Line({ points: lg.orientation === 'H' ? [-6000, 0, 6000, 0] : [0, -6000, 0, 6000], stroke: 'rgb(0, 161, 255)', strokeWidth: 1, name: 'guid-line', dash: [4, 6], }); guideLayer.add(line); line.absolutePosition({ x: lg.lineGuide, y: lg.lineGuide }); }); }
-  
-  const updateTextColorOptions = (selectedLabelColorName) => { const conflictingColors = colorConflictMap[selectedLabelColorName] || []; const textSwatches = textColorSelector.querySelectorAll('.color-swatch'); textSwatches.forEach(swatch => { const swatchColorName = swatch.dataset.colorName; swatch.classList.toggle('disabled', conflictingColors.includes(swatchColorName)); }); const activeTextSwatch = textColorSelector.querySelector('.color-swatch.active'); if (activeTextSwatch && activeTextSwatch.classList.contains('disabled')) { const firstAvailable = textColorSelector.querySelector('.color-swatch:not(.disabled)'); if (firstAvailable) { firstAvailable.click(); } } };
-  const populateSymbolSelectors = () => { const categoryGrid = symbolControls.querySelector('#symbol-category-grid'); const symbolGridContainer = symbolControls.querySelector('#symbol-grid-container'); for (const categoryName in symbolData) { const categoryButton = document.createElement('button'); categoryButton.type = 'button'; categoryButton.className = 'symbol-category-btn p-2 border rounded-md text-sm w-full text-left hover:bg-gray-50'; categoryButton.textContent = categoryName; categoryButton.dataset.category = categoryName; categoryGrid.appendChild(categoryButton); const grid = document.createElement('div'); grid.id = `symbol-grid-${categoryName}`; grid.className = 'symbol-grid hidden flex flex-wrap gap-2'; symbolData[categoryName].forEach(symbol => { const symbolWrapper = document.createElement('div'); symbolWrapper.className = 'symbol-item'; symbolWrapper.title = symbol.name; symbolWrapper.dataset.path = symbol.path; symbolWrapper.dataset.name = symbol.name; symbolWrapper.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="${symbol.path}"></path></svg>`; grid.appendChild(symbolWrapper); }); symbolGridContainer.appendChild(grid); } };
-  const addOrUpdateSymbol = (pathData, symbolName) => { if (currentSymbol) { currentSymbol.destroy(); } const activeTextColor = textColorSelector.querySelector('.color-swatch.active')?.dataset.colorHex || '#000000'; currentSymbol = new Konva.Path({ x: stage.width() / 2, y: stage.height() / 2, data: pathData, fill: activeTextColor, draggable: true, scale: { x: 3, y: 3 } }); currentSymbol.offsetX(currentSymbol.width() / 2); currentSymbol.offsetY(currentSymbol.height() / 2); currentSymbol.setAttr('symbolName', symbolName); mainLayer.add(currentSymbol); mainLayer.batchDraw(); };
-  
+
+  const updateTextColorOptions = (selectedLabelColorName) => {
+    const conflictingColors = colorConflictMap[selectedLabelColorName] || [];
+    const textSwatches = textColorSelector.querySelectorAll('.color-swatch');
+    textSwatches.forEach(swatch => {
+      const swatchColorName = swatch.dataset.colorName;
+      swatch.classList.toggle('disabled', conflictingColors.includes(swatchColorName));
+    });
+    const activeTextSwatch = textColorSelector.querySelector('.color-swatch.active');
+    if (activeTextSwatch && activeTextSwatch.classList.contains('disabled')) {
+      const firstAvailable = textColorSelector.querySelector('.color-swatch:not(.disabled)');
+      if (firstAvailable) {
+        firstAvailable.click();
+      }
+    }
+  };
+
   sizeSelector.addEventListener('change', (e) => { if (e.target.name === 'label-size') { updateCanvasSize(e.target.value); } });
   materialSelector.addEventListener('change', (e) => { if (e.target.name === 'label-material') { applyBaseMaterial(e.target.value); } });
   labelColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch) return; labelColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; const newColorName = swatch.dataset.colorName; applyLabelColor(newColorHex); updateTextColorOptions(newColorName); });
   pureColorSelector.addEventListener('change', () => { const activeSwatch = labelColorSelector.querySelector('.color-swatch.active'); if (activeSwatch) { applyLabelColor(activeSwatch.dataset.colorHex); updateTextColorOptions(activeSwatch.dataset.colorName); } });
-  textColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch || swatch.classList.contains('disabled')) return; textColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; textObjects.forEach(textNode => textNode.fill(newColorHex)); if (currentSymbol) { currentSymbol.fill(newColorHex); } mainLayer.batchDraw(); });
+  textColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch || swatch.classList.contains('disabled')) return; textColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; textObjects.forEach(textNode => textNode.fill(newColorHex)); mainLayer.batchDraw(); });
   textRowsContainer.addEventListener('input', (e) => { if (e.target.classList.contains('text-input')) { const index = e.target.dataset.rowIndex; const textNode = textObjects[index]; textNode.text(e.target.value); repositionAllTexts(); } });
   textRowsContainer.addEventListener('change', (e) => { if (e.target.classList.contains('font-selector')) { const index = e.target.dataset.rowIndex; const textNode = textObjects[index]; textNode.fontFamily(e.target.value); repositionAllTexts(); } });
   fontSizeInput.addEventListener('input', (e) => { const newSize = parseInt(e.target.value, 10); textObjects.forEach(textNode => textNode.fontSize(newSize)); repositionAllTexts(); });
-  
-  const categoryView = symbolControls.querySelector('#symbol-category-view');
-  const pickerView = symbolControls.querySelector('#symbol-picker-view');
-  const currentCategoryNameEl = symbolControls.querySelector('#current-category-name');
-  symbolControls.addEventListener('click', (e) => { const categoryBtn = e.target.closest('.symbol-category-btn'); const backBtn = e.target.closest('#back-to-categories-btn'); const symbolItem = e.target.closest('.symbol-item'); if (categoryBtn) { const categoryName = categoryBtn.dataset.category; categoryView.classList.add('hidden'); pickerView.classList.remove('hidden'); currentCategoryNameEl.textContent = categoryName; symbolControls.querySelectorAll('.symbol-grid').forEach(grid => grid.classList.add('hidden')); symbolControls.querySelector(`#symbol-grid-${categoryName}`).classList.remove('hidden'); } if (backBtn) { pickerView.classList.add('hidden'); categoryView.classList.remove('hidden'); } if (symbolItem) { const pathData = symbolItem.dataset.path; const symbolName = symbolItem.dataset.name; addOrUpdateSymbol(pathData, symbolName); } });
-  
   mainLayer.on('dragmove', (e) => { const GUIDELINE_OFFSET = 5; guideLayer.find('.guid-line').forEach((l) => l.destroy()); const lineGuideStops = getLineGuideStops(); const itemBounds = getObjectSnappingEdges(e.target); const guides = []; lineGuideStops.vertical.forEach((lineGuide) => { itemBounds.vertical.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.x(Math.round(e.target.x() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'V' }); } }); }); lineGuideStops.horizontal.forEach((lineGuide) => { itemBounds.horizontal.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.y(Math.round(e.target.y() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'H' }); } }); }); drawGuides(guides); guideLayer.batchDraw(); });
   mainLayer.on('dragend', () => { guideLayer.find('.guid-line').forEach((l) => l.destroy()); guideLayer.batchDraw(); });
   
@@ -204,7 +176,6 @@ const initializeKonvaApp = (sectionElement) => {
       '字体大小': fontSizeInput.value,
       '字体颜色': textColorSelector.querySelector('.color-swatch.active')?.dataset.colorName || 'N/A',
     };
-    if (currentSymbol) { properties['Symbol'] = currentSymbol.getAttr('symbolName'); }
     for (let i = 0; i < NUM_TEXT_ROWS; i++) {
       const textVal = sectionElement.querySelector(`#text-input-${i+1}`).value;
       if (textVal) {
@@ -218,16 +189,20 @@ const initializeKonvaApp = (sectionElement) => {
       .catch(console.error);
   });
 
-  populateSymbolSelectors();
   const initialMaterialUrl = materialSelector.querySelector('input[name="label-material"]:checked').value;
   applyBaseMaterial(initialMaterialUrl);
   const initialLabelSwatch = labelColorSelector.querySelector('.color-swatch.active');
-  if (initialLabelSwatch) { applyLabelColor(initialLabelSwatch.dataset.colorHex); updateTextColorOptions(initialLabelSwatch.dataset.colorName); }
+  if (initialLabelSwatch) {
+    applyLabelColor(initialLabelSwatch.dataset.colorHex);
+    updateTextColorOptions(initialLabelSwatch.dataset.colorName);
+  }
   const initialTextSwatch = textColorSelector.querySelector('.color-swatch.active');
-  if(initialTextSwatch) { textObjects.forEach(textNode => textNode.fill(initialTextSwatch.dataset.colorHex)); }
+  if(initialTextSwatch) {
+    textObjects.forEach(textNode => textNode.fill(initialTextSwatch.dataset.colorHex));
+  }
   repositionAllTexts();
   stage.batchDraw();
-  console.log("Konva: 初始化流程完成！ (版本 3.4.1)");
+  console.log("Konva: 初始化流程完成！ (版本 3.3.2)");
 };
   
 const bootstrapper = () => {
