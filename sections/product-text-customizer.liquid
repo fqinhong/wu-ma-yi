@@ -219,9 +219,17 @@ const initializeKonvaApp = (sectionElement) => {
   fullFuncsAndListeners();
 };
   
-const bootstrapper = () => { /* ... */ };
+// ---- 启动器代码 (bootstrapper) ----
+const bootstrapper = () => { const konvaCheckInterval = setInterval(() => { if (typeof window.Konva !== 'undefined') { clearInterval(konvaCheckInterval); const sectionId = 'shopify-section-{{ section.id }}'; const sectionElement = document.getElementById(sectionId); if (!sectionElement) { console.error('Konva Initializer: Could not find section element with ID:', sectionId); return; } const elementCheckInterval = setInterval(() => { const konvaContainer = sectionElement.querySelector('#konva-container'); if (konvaContainer) { clearInterval(elementCheckInterval); initializeKonvaApp(sectionElement); } }, 100); setTimeout(() => { clearInterval(elementCheckInterval); }, 5000); } }, 100); setTimeout(() => { clearInterval(konvaCheckInterval); }, 5000); };
+document.addEventListener('turbo:load', bootstrapper);
+document.addEventListener('shopify:section:load', (event) => { const sectionElement = event.target; if (sectionElement && sectionElement.querySelector('#konva-container')) { initializeKonvaApp(sectionElement); } });
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', bootstrapper); } else { bootstrapper(); }
 </script>
 
 {% schema %}
-{ /* ... */ }
+{
+  "name": "Product Text Customizer",
+  "settings": [],
+  "presets": [ { "name": "Product Text Customizer" } ]
+}
 {% endschema %}
