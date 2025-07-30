@@ -1,8 +1,8 @@
 {% comment %}
-  版本 2.1: 改为使用 Tailwind CSS 工具类
-  - 移除了旧的自定义 CSS.
-  - 将样式直接通过 Tailwind 类应用到 HTML 元素上.
-  - 为 .active 状态使用 @apply, 这是 Tailwind 中处理动态状态的推荐模式.
+  版本 2.2: 修正版
+  - 修正了一个致命的拼写错误 (sectionEment -> sectionElement)，该错误导致画布无法加载。
+  - 将所有辅助函数和事件监听器恢复到 initializeKonvaApp 的作用域内，以修复拖拽功能并保持代码结构的稳定性。
+  - 保留了正确的 Tailwind CSS 实现。
 {% endcomment %}
 
 <style>
@@ -10,7 +10,6 @@
     使用 @apply 将 Tailwind 工具类组合成一个单一的 'active' 状态类。
     这使得 JavaScript 的逻辑保持简单 (只需切换 'active' 类),
     同时完全利用了 Tailwind 的设计系统。
-    这个 ring 效果会在选中的样本周围创建一个漂亮的彩色环形。
   */
   .color-swatch.active {
     @apply ring-2 ring-offset-2 ring-indigo-600 ring-offset-white;
@@ -27,7 +26,6 @@
       <div class="control-group mb-5">
         <label class="block text-sm font-medium text-gray-700 mb-2">1. 选择标签尺寸:</label>
         <div id="size-selector" class="flex items-center gap-4">
-          <!-- Size options... (no changes here) -->
           <div>
             <input type="radio" id="size-60x15" name="label-size" value="60x15" class="hidden peer" checked>
             <label for="size-60x15" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100">                           
@@ -53,7 +51,6 @@
       <div class="control-group mb-5">
         <label class="block text-sm font-medium text-gray-700 mb-2">选择标签材质:</label>
         <div id="material-selector" class="flex items-center gap-4">
-           <!-- Material options... (no changes here) -->
           <div>
             <input type="radio" id="material-fabric" name="label-material" value="{{ 'fabric.jpg' | asset_url }}" class="hidden peer" checked>
             <label for="material-fabric" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100">                           
@@ -79,7 +76,6 @@
       <div class="control-group mb-5">
         <label class="block text-sm font-medium text-gray-700 mb-2">2. 选择固定方式:</label>
         <div id="fixing-type-selector" class="flex items-center gap-4">
-           <!-- Fixing type options... (no changes here) -->
           <div>
             <input type="radio" id="sew-on" name="fixing-type" value="Sew On" class="hidden peer" checked>
             <label for="sew-on" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100">                           
@@ -105,12 +101,6 @@
       <div class="control-group mb-5">
         <label class="block text-sm font-medium text-gray-700 mb-2">3. 选择标签颜色:</label>
         <div id="label-color-selector" class="flex flex-wrap gap-2">
-          
-          <!--
-            开发者提示:
-            - 第一个样本(白色)是默认选中的,所以有 `active` class.
-            - `div` 现在使用 Tailwind 类进行样式设置.
-          -->
           <div title="White" data-color-name="White" data-color-hex="#FFFFFF"
                class="color-swatch active w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" 
                style="background-image: url('{{ "white.jpg" | asset_url }}')">
@@ -136,11 +126,9 @@
                style="background-image: url('{{ "red.jpg" | asset_url }}')">
           </div>
           <!-- 在这里添加更多颜色... -->
-
         </div>
       </div>
 
-      <!-- Other controls... (no changes here) -->
       <div class="control-group mb-5">
         <label for="text-input" class="block text-sm font-medium text-gray-700 mb-1">输入文字:</label>
         <input type="text" id="text-input" placeholder="你的文字" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -166,225 +154,278 @@
 </div>
 
 <script>
-  // =================================================================
-  // SCRIPT SECTION - NO CHANGES NEEDED HERE
-  // The JavaScript logic remains identical to the previous version.
-  // =================================================================
-  const initializeKonvaApp = (sectionElement) => {
-    const konvaContainer = sectionElement.querySelector('#konva-container');
-    if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
-    konvaContainer.dataset.initialized = 'true';
+const initializeKonvaApp = (sectionElement) => {
+  const konvaContainer = sectionElement.querySelector('#konva-container');
+  if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
+  konvaContainer.dataset.initialized = 'true';
 
-    console.log("Konva: 初始化开始 (Tailwind Version)...");
+  console.log("Konva: 初始化开始 (版本 2.2 - 修正版)...");
 
-    // --- 1. 获取所有 HTML 元素 ---
-    const sizeSelector = sectionElement.querySelector('#size-selector');
-    const fixingTypeSelector = sectionElement.querySelector('#fixing-type-selector');
-    const materialSelector = sectionElement.querySelector('#material-selector');
-    const labelColorSelector = sectionElement.querySelector('#label-color-selector');
-    const textInput = sectionElement.querySelector('#text-input');
-    const fontSizeInput = sectionEment.querySelector('#font-size-input');
-    const colorInput = sectionElement.querySelector('#color-input');
-    const addToCartBtn = sectionElement.querySelector('#add-to-cart-btn');
+  // --- 1. 获取所有 HTML 元素 ---
+  const sizeSelector = sectionElement.querySelector('#size-selector');
+  const fixingTypeSelector = sectionElement.querySelector('#fixing-type-selector');
+  const materialSelector = sectionElement.querySelector('#material-selector');
+  const labelColorSelector = sectionElement.querySelector('#label-color-selector');
+  const textInput = sectionElement.querySelector('#text-input');
+  // **已修正**: `sectionEment` -> `sectionElement`
+  const fontSizeInput = sectionElement.querySelector('#font-size-input');
+  const colorInput = sectionElement.querySelector('#color-input');
+  const addToCartBtn = sectionElement.querySelector('#add-to-cart-btn');
 
-    // --- 2. 初始化画布和 Konva 对象 ---
-    const baseWidth = konvaContainer.parentElement.clientWidth || 500;
-    const sizeRatios = { '60x15': 15 / 60, '60x20': 20 / 60 };
-    const initialSizeValue = sizeSelector.querySelector('input[name="label-size"]:checked').value;
-    const initialHeight = baseWidth * sizeRatios[initialSizeValue];
+  // --- 2. 初始化画布和 Konva 对象 ---
+  const baseWidth = konvaContainer.parentElement.clientWidth || 500;
+  const sizeRatios = { '60x15': 15 / 60, '60x20': 20 / 60 };
+  const initialSizeValue = sizeSelector.querySelector('input[name="label-size"]:checked').value;
+  const initialHeight = baseWidth * sizeRatios[initialSizeValue];
 
-    konvaContainer.style.width = `${baseWidth}px`;
-    konvaContainer.style.height = `${initialHeight}px`;
+  konvaContainer.style.width = `${baseWidth}px`;
+  konvaContainer.style.height = `${initialHeight}px`;
 
-    const stage = new Konva.Stage({ container: konvaContainer, width: baseWidth, height: initialHeight });
-    
-    const mainLayer = new Konva.Layer();
-    stage.add(mainLayer);
-    const guideLayer = new Konva.Layer();
-    stage.add(guideLayer);
-
-    const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: baseWidth, height: initialHeight, fill: '#f0f0f0' });
-    mainLayer.add(backgroundRect);
-
-    const colorOverlayRect = new Konva.Rect({
-        x: 0, y: 0,
-        width: baseWidth, height: initialHeight,
-        fill: '#FFFFFF',
-        opacity: 0,
-        name: 'color-overlay'
-    });
-    mainLayer.add(colorOverlayRect);
-
-    const konvaText = new Konva.Text({ x: stage.width() / 2, y: stage.height() / 2, text: '你的文字', fontSize: 30, fontFamily: 'Arial', fill: '#000000', draggable: true });
-    mainLayer.add(konvaText);
-    konvaText.offsetX(konvaText.width() / 2);
-    konvaText.offsetY(konvaText.height() / 2);
-
-    mainLayer.draw();
-
-    // --- 3. 定义可重用的函数 ---
-    const GUIDELINE_OFFSET = 5;
-    
-    const updateCanvasSize = (newSizeValue) => {
-      const newRatio = sizeRatios[newSizeValue];
-      const newHeight = baseWidth * newRatio;
-      konvaContainer.style.height = `${newHeight}px`;
-      stage.height(newHeight);
-      backgroundRect.height(newHeight);
-      colorOverlayRect.height(newHeight);
-      konvaText.position({ x: baseWidth / 2, y: newHeight / 2 });
-      stage.batchDraw();
-    };
-
-    const applyBaseMaterial = (materialUrl) => {
-      const imageObj = new Image();
-      imageObj.crossOrigin = 'Anonymous';
-      imageObj.onload = () => {
-        backgroundRect.fillPatternImage(imageObj);
-        backgroundRect.fillPatternRepeat('repeat');
-        backgroundRect.fill(null);
-        mainLayer.batchDraw();
-      };
-      imageObj.src = materialUrl;
-    };
-    
-    const applyLabelColor = (colorHex) => {
-        colorOverlayRect.fill(colorHex);
-        if (colorHex.toUpperCase() === '#FFFFFF') {
-            colorOverlayRect.opacity(0);
-        } else {
-            colorOverlayRect.opacity(0.7);
-        }
-        mainLayer.batchDraw();
-    };
-
-    // --- 4. 绑定所有事件监听器 ---
-    sizeSelector.addEventListener('change', (e) => {
-      if (e.target.name === 'label-size') { updateCanvasSize(e.target.value); }
-    });
-
-    materialSelector.addEventListener('change', (e) => {
-      if (e.target.name === 'label-material') { applyBaseMaterial(e.target.value); }
-    });
-    
-    labelColorSelector.addEventListener('click', (e) => {
-        const swatch = e.target.closest('.color-swatch');
-        if (!swatch) return;
-
-        labelColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-        swatch.classList.add('active');
-        
-        const newColor = swatch.dataset.colorHex;
-        applyLabelColor(newColor);
-    });
-    
-    textInput.addEventListener('input', (e) => { konvaText.text(e.target.value || ' '); konvaText.offsetX(konvaText.width() / 2); mainLayer.batchDraw(); });
-    fontSizeInput.addEventListener('input', (e) => { konvaText.fontSize(parseInt(e.target.value, 10)); konvaText.offsetX(konvaText.width()/2); konvaText.offsetY(konvaText.height()/2); mainLayer.batchDraw(); });
-    colorInput.addEventListener('input', (e) => { konvaText.fill(e.target.value); mainLayer.batchDraw(); });
-
-    addToCartBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      guideLayer.destroyChildren();
-
-      const productForm = document.querySelector('form[action*="/cart/add"]');
-      const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
-      if (!variantIdInput || !variantIdInput.value) { alert('错误：找不到产品变体ID。'); return; }
-      
-      const selectedSize = sizeSelector.querySelector('input[name="label-size"]:checked').value;
-      const selectedFixingType = fixingTypeSelector.querySelector('input[name="fixing-type"]:checked').value;
-      const selectedMaterialInput = materialSelector.querySelector('input[name="label-material"]:checked');
-      const selectedMaterialName = selectedMaterialInput.nextElementSibling.querySelector('.text-xs').textContent;
-      
-      const selectedColorSwatch = labelColorSelector.querySelector('.color-swatch.active');
-      const selectedColorName = selectedColorSwatch ? selectedColorSwatch.dataset.colorName : 'N/A';
-
-      const previewImage = stage.toDataURL({ mimeType: 'image/jpeg', quality: 0.7 });
-
-      const formData = {
-        items: [{
-          id: variantIdInput.value,
-          quantity: 1,
-          properties: {
-            'CustomTextPreview': previewImage,
-            '尺寸': selectedSize,
-            '固定方式': selectedFixingType,
-            '材质': selectedMaterialName,
-            '标签颜色': selectedColorName,
-            '定制文字': textInput.value,
-            '字体大小': fontSizeInput.value,
-            '字体颜色': colorInput.value,
-          }
-        }]
-      };
-      fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
-        .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
-        .catch(console.error);
-    });
-    
-    // --- 5. 最终初始化 ---
-    const initialMaterialUrl = materialSelector.querySelector('input[name="label-material"]:checked').value;
-    applyBaseMaterial(initialMaterialUrl);
-
-    const initialColorSwatch = labelColorSelector.querySelector('.color-swatch.active');
-    if (initialColorSwatch) {
-        applyLabelColor(initialColorSwatch.dataset.colorHex);
-    }
-
-    stage.batchDraw();
-    console.log("Konva: 初始化流程完成！(版本 2.1 - Tailwind an @apply)");
-  };
+  const stage = new Konva.Stage({ container: konvaContainer, width: baseWidth, height: initialHeight });
   
-  // ---- 启动器代码 (bootstrapper) ----
-  const bootstrapper = () => {
-    const konvaCheckInterval = setInterval(() => {
-      if (typeof window.Konva !== 'undefined') {
-        clearInterval(konvaCheckInterval);
-        // 注意：这里的 section.id 可能需要根据你的主题动态生成，或者你需要一个更可靠的方式来定位这个section
-        const sectionElement = document.querySelector('.product-text-customizer-section'); // 假设你给section加了这个class
-        if (!sectionElement) {
-          // Fallback to a less specific selector if needed
-          const potentialSection = document.querySelector('#konva-container');
-          if (potentialSection) initializeKonvaApp(potentialSection.closest('.shopify-section'));
-          return;
-        };
-        initializeKonvaApp(sectionElement);
-      }
-    }, 100);
-    setTimeout(() => { clearInterval(konvaCheckInterval); }, 5000);
-  };
+  const mainLayer = new Konva.Layer();
+  stage.add(mainLayer);
+  const guideLayer = new Konva.Layer();
+  stage.add(guideLayer);
 
-  // --- Konva & Shopify Lifecycle Loaders ---
-  document.addEventListener('turbo:load', bootstrapper);
-  document.addEventListener('shopify:section:load', bootstrapper);
-  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', bootstrapper); } else { bootstrapper(); }
+  const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: baseWidth, height: initialHeight, fill: '#f0f0f0' });
+  mainLayer.add(backgroundRect);
 
-  // [内部函数定义区域 - 保持不变]
-  function getLineGuideStops(stage) { const vertical = [0, stage.width() / 2, stage.width()]; const horizontal = [0, stage.height() / 2, stage.height()]; return { vertical, horizontal }; }
-  function getObjectSnappingEdges(node) { const box = node.getClientRect(); const absPos = node.absolutePosition(); return { vertical: [ { guide: Math.round(box.x), offset: Math.round(absPos.x - box.x), snap: 'start' }, { guide: Math.round(box.x + box.width / 2), offset: Math.round(absPos.x - box.x - box.width / 2), snap: 'center' }, { guide: Math.round(box.x + box.width), offset: Math.round(absPos.x - box.x - box.width), snap: 'end' }, ], horizontal: [ { guide: Math.round(box.y), offset: Math.round(absPos.y - box.y), snap: 'start' }, { guide: Math.round(box.y + box.height / 2), offset: Math.round(absPos.y - box.y - box.height / 2), snap: 'center' }, { guide: Math.round(box.y + box.height), offset: Math.round(absPos.y - box.y - box.height), snap: 'end' }, ], }; }
-  function drawGuides(guides, guideLayer) { guides.forEach((lg) => { let line = new Konva.Line({ points: lg.orientation === 'H' ? [-6000, 0, 6000, 0] : [0, -6000, 0, 6000], stroke: 'rgb(0, 161, 255)', strokeWidth: 1, name: 'guid-line', dash: [4, 6], }); guideLayer.add(line); line.absolutePosition({ x: lg.lineGuide, y: lg.lineGuide }); }); }
+  const colorOverlayRect = new Konva.Rect({
+      x: 0, y: 0,
+      width: baseWidth, height: initialHeight,
+      fill: '#FFFFFF',
+      opacity: 0,
+      name: 'color-overlay'
+  });
+  mainLayer.add(colorOverlayRect);
 
-  // 事件监听现在需要传递 stage 和 layer 的引用
-  function setupDragEvents(mainLayer, guideLayer, stage) {
-    const GUIDELINE_OFFSET = 5;
-    mainLayer.on('dragmove', (e) => { 
-        guideLayer.find('.guid-line').forEach((l) => l.destroy()); 
-        const lineGuideStops = getLineGuideStops(stage); 
-        const itemBounds = getObjectSnappingEdges(e.target); 
-        const guides = []; 
-        lineGuideStops.vertical.forEach((lineGuide) => { itemBounds.vertical.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.x(Math.round(e.target.x() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'V' }); } }); }); 
-        lineGuideStops.horizontal.forEach((lineGuide) => { itemBounds.horizontal.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.y(Math.round(e.target.y() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'H' }); } }); }); 
-        drawGuides(guides, guideLayer); 
-        guideLayer.batchDraw(); 
-    });
-    mainLayer.on('dragend', () => { 
-        guideLayer.find('.guid-line').forEach((l) => l.destroy()); 
-        guideLayer.batchDraw(); 
+  const konvaText = new Konva.Text({ x: stage.width() / 2, y: stage.height() / 2, text: '你的文字', fontSize: 30, fontFamily: 'Arial', fill: '#000000', draggable: true });
+  mainLayer.add(konvaText);
+  konvaText.offsetX(konvaText.width() / 2);
+  konvaText.offsetY(konvaText.height() / 2);
+
+  // --- 3. 定义可重用的函数 (及辅助函数) ---
+  // **已恢复**: 所有辅助函数现在都在 initializeKonvaApp 内部，以确保正确的作用域
+  const GUIDELINE_OFFSET = 5;
+
+  function getLineGuideStops() {
+    const vertical = [0, stage.width() / 2, stage.width()];
+    const horizontal = [0, stage.height() / 2, stage.height()];
+    return { vertical, horizontal };
+  }
+
+  function getObjectSnappingEdges(node) {
+    const box = node.getClientRect();
+    const absPos = node.absolutePosition();
+    return {
+      vertical: [
+        { guide: Math.round(box.x), offset: Math.round(absPos.x - box.x), snap: 'start' },
+        { guide: Math.round(box.x + box.width / 2), offset: Math.round(absPos.x - box.x - box.width / 2), snap: 'center' },
+        { guide: Math.round(box.x + box.width), offset: Math.round(absPos.x - box.x - box.width), snap: 'end' },
+      ],
+      horizontal: [
+        { guide: Math.round(box.y), offset: Math.round(absPos.y - box.y), snap: 'start' },
+        { guide: Math.round(box.y + box.height / 2), offset: Math.round(absPos.y - box.y - box.height / 2), snap: 'center' },
+        { guide: Math.round(box.y + box.height), offset: Math.round(absPos.y - box.y - box.height), snap: 'end' },
+      ],
+    };
+  }
+  
+  function drawGuides(guides) {
+    guides.forEach((lg) => {
+      let line = new Konva.Line({
+        points: lg.orientation === 'H' ? [-6000, 0, 6000, 0] : [0, -6000, 0, 6000],
+        stroke: 'rgb(0, 161, 255)',
+        strokeWidth: 1,
+        name: 'guid-line',
+        dash: [4, 6],
+      });
+      guideLayer.add(line);
+      line.absolutePosition({ x: lg.lineGuide, y: lg.lineGuide });
     });
   }
 
-  // 在 initializeKonvaApp 中调用
-  // setupDragEvents(mainLayer, guideLayer, stage);
-  // (由于作用域问题,我将逻辑直接保留在 initializeKonvaApp 中,如果代码变得更复杂,可以像这样重构)
+  const updateCanvasSize = (newSizeValue) => {
+    const newRatio = sizeRatios[newSizeValue];
+    const newHeight = baseWidth * newRatio;
+    konvaContainer.style.height = `${newHeight}px`;
+    stage.height(newHeight);
+    backgroundRect.height(newHeight);
+    colorOverlayRect.height(newHeight);
+    konvaText.position({ x: baseWidth / 2, y: newHeight / 2 });
+    stage.batchDraw();
+  };
+
+  const applyBaseMaterial = (materialUrl) => {
+    const imageObj = new Image();
+    imageObj.crossOrigin = 'Anonymous';
+    imageObj.onload = () => {
+      backgroundRect.fillPatternImage(imageObj);
+      backgroundRect.fillPatternRepeat('repeat');
+      backgroundRect.fill(null);
+      mainLayer.batchDraw();
+    };
+    imageObj.src = materialUrl;
+  };
+  
+  const applyLabelColor = (colorHex) => {
+      colorOverlayRect.fill(colorHex);
+      if (colorHex.toUpperCase() === '#FFFFFF') {
+          colorOverlayRect.opacity(0);
+      } else {
+          colorOverlayRect.opacity(0.7);
+      }
+      mainLayer.batchDraw();
+  };
+
+  // --- 4. 绑定所有事件监听器 ---
+  sizeSelector.addEventListener('change', (e) => {
+    if (e.target.name === 'label-size') { updateCanvasSize(e.target.value); }
+  });
+
+  materialSelector.addEventListener('change', (e) => {
+    if (e.target.name === 'label-material') { applyBaseMaterial(e.target.value); }
+  });
+  
+  labelColorSelector.addEventListener('click', (e) => {
+      const swatch = e.target.closest('.color-swatch');
+      if (!swatch) return;
+
+      labelColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      swatch.classList.add('active');
+      
+      const newColor = swatch.dataset.colorHex;
+      applyLabelColor(newColor);
+  });
+  
+  textInput.addEventListener('input', (e) => { konvaText.text(e.target.value || ' '); konvaText.offsetX(konvaText.width() / 2); mainLayer.batchDraw(); });
+  fontSizeInput.addEventListener('input', (e) => { konvaText.fontSize(parseInt(e.target.value, 10)); konvaText.offsetX(konvaText.width()/2); konvaText.offsetY(konvaText.height()/2); mainLayer.batchDraw(); });
+  colorInput.addEventListener('input', (e) => { konvaText.fill(e.target.value); mainLayer.batchDraw(); });
+  
+  mainLayer.on('dragmove', (e) => {
+    guideLayer.find('.guid-line').forEach((l) => l.destroy());
+    const lineGuideStops = getLineGuideStops();
+    const itemBounds = getObjectSnappingEdges(e.target);
+    const guides = [];
+
+    lineGuideStops.vertical.forEach((lineGuide) => {
+      itemBounds.vertical.forEach((itemBound) => {
+        const diff = Math.abs(lineGuide - itemBound.guide);
+        if (diff < GUIDELINE_OFFSET) {
+          e.target.x(Math.round(e.target.x() - (itemBound.guide - lineGuide)));
+          guides.push({ lineGuide, orientation: 'V' });
+        }
+      });
+    });
+    lineGuideStops.horizontal.forEach((lineGuide) => {
+      itemBounds.horizontal.forEach((itemBound) => {
+        const diff = Math.abs(lineGuide - itemBound.guide);
+        if (diff < GUIDELINE_OFFSET) {
+          e.target.y(Math.round(e.target.y() - (itemBound.guide - lineGuide)));
+          guides.push({ lineGuide, orientation: 'H' });
+        }
+      });
+    });
+
+    drawGuides(guides);
+    guideLayer.batchDraw();
+  });
+
+  mainLayer.on('dragend', () => {
+    guideLayer.find('.guid-line').forEach((l) => l.destroy());
+    guideLayer.batchDraw();
+  });
+
+  addToCartBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    guideLayer.destroyChildren();
+
+    const productForm = document.querySelector('form[action*="/cart/add"]');
+    const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
+    if (!variantIdInput || !variantIdInput.value) { alert('错误：找不到产品变体ID。'); return; }
+    
+    const selectedSize = sizeSelector.querySelector('input[name="label-size"]:checked').value;
+    const selectedFixingType = fixingTypeSelector.querySelector('input[name="fixing-type"]:checked').value;
+    const selectedMaterialInput = materialSelector.querySelector('input[name="label-material"]:checked');
+    const selectedMaterialName = selectedMaterialInput.nextElementSibling.querySelector('.text-xs').textContent;
+    
+    const selectedColorSwatch = labelColorSelector.querySelector('.color-swatch.active');
+    const selectedColorName = selectedColorSwatch ? selectedColorSwatch.dataset.colorName : 'N/A';
+
+    const previewImage = stage.toDataURL({ mimeType: 'image/jpeg', quality: 0.7 });
+
+    const formData = {
+      items: [{
+        id: variantIdInput.value,
+        quantity: 1,
+        properties: {
+          'CustomTextPreview': previewImage,
+          '尺寸': selectedSize,
+          '固定方式': selectedFixingType,
+          '材质': selectedMaterialName,
+          '标签颜色': selectedColorName,
+          '定制文字': textInput.value,
+          '字体大小': fontSizeInput.value,
+          '字体颜色': colorInput.value,
+        }
+      }]
+    };
+    fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
+      .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
+      .catch(console.error);
+  });
+  
+  // --- 5. 最终初始化 ---
+  const initialMaterialUrl = materialSelector.querySelector('input[name="label-material"]:checked').value;
+  applyBaseMaterial(initialMaterialUrl);
+
+  const initialColorSwatch = labelColorSelector.querySelector('.color-swatch.active');
+  if (initialColorSwatch) {
+      applyLabelColor(initialColorSwatch.dataset.colorHex);
+  }
+
+  stage.batchDraw();
+  console.log("Konva: 初始化流程完成！ (版本 2.2)");
+};
+  
+// ---- 启动器代码 (bootstrapper) ----
+const bootstrapper = () => {
+  const konvaCheckInterval = setInterval(() => {
+    if (typeof window.Konva !== 'undefined') {
+      clearInterval(konvaCheckInterval);
+      const sectionId = 'shopify-section-{{ section.id }}';
+      const sectionElement = document.getElementById(sectionId);
+      if (!sectionElement) {
+        console.error('Konva Initializer: Could not find section element with ID:', sectionId);
+        return;
+      }
+      const elementCheckInterval = setInterval(() => {
+        const konvaContainer = sectionElement.querySelector('#konva-container');
+        if (konvaContainer) {
+          clearInterval(elementCheckInterval);
+          initializeKonvaApp(sectionElement);
+        }
+      }, 100);
+      setTimeout(() => { clearInterval(elementCheckInterval); }, 5000);
+    }
+  }, 100);
+  setTimeout(() => { clearInterval(konvaCheckInterval); }, 5000);
+};
+
+document.addEventListener('turbo:load', bootstrapper);
+document.addEventListener('shopify:section:load', (event) => {
+    // 当 Shopify 编辑器重新加载此部分时，我们只需要在那个特定 section 上重新运行初始化
+    const sectionElement = event.target;
+    if (sectionElement) {
+        initializeKonvaApp(sectionElement);
+    }
+});
+if (document.readyState === 'loading') { 
+    document.addEventListener('DOMContentLoaded', bootstrapper); 
+} else { 
+    bootstrapper(); 
+}
 
 </script>
 
@@ -396,7 +437,6 @@
     {
       "name": "Product Text Customizer"
     }
-  ],
-  "class": "product-text-customizer-section"
+  ]
 }
 {% endschema %}
