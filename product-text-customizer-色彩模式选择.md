@@ -1,16 +1,11 @@
 {% comment %}
-  版本 2.2: 修正版
-  - 修正了一个致命的拼写错误 (sectionEment -> sectionElement)，该错误导致画布无法加载。
-  - 将所有辅助函数和事件监听器恢复到 initializeKonvaApp 的作用域内，以修复拖拽功能并保持代码结构的稳定性。
-  - 保留了正确的 Tailwind CSS 实现。
+  版本 2.4: 集成纯色模式
+  - 基于可正常显示颜色标签的版本 (2.2 修正版)。
+  - 完整地加入了 "4. 选择色彩模式" 的所有功能 (HTML, JS, 和购物车逻辑)。
+  - 这是一个包含截至目前所有功能的完整、稳定的版本。
 {% endcomment %}
 
 <style>
-  /* 
-    使用 @apply 将 Tailwind 工具类组合成一个单一的 'active' 状态类。
-    这使得 JavaScript 的逻辑保持简单 (只需切换 'active' 类),
-    同时完全利用了 Tailwind 的设计系统。
-  */
   .color-swatch.active {
     @apply ring-2 ring-offset-2 ring-indigo-600 ring-offset-white;
   }
@@ -101,31 +96,37 @@
       <div class="control-group mb-5">
         <label class="block text-sm font-medium text-gray-700 mb-2">3. 选择标签颜色:</label>
         <div id="label-color-selector" class="flex flex-wrap gap-2">
-          <div title="White" data-color-name="White" data-color-hex="#FFFFFF"
-               class="color-swatch active w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" 
-               style="background-image: url('{{ "white.jpg" | asset_url }}')">
+          <div title="White" data-color-name="White" data-color-hex="#FFFFFF" class="color-swatch active w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "white.jpg" | asset_url }}')"> </div>
+          <div title="Apple Green" data-color-name="Apple Green" data-color-hex="#77B800" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "applegreen.jpg" | asset_url }}')"> </div>
+          <div title="Black" data-color-name="Black" data-color-hex="#000000" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "black.jpg" | asset_url }}')"> </div>
+          <div title="Blue" data-color-name="Blue" data-color-hex="#0000FF" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "blue.jpg" | asset_url }}')"> </div>
+          <div title="Brown" data-color-name="Brown" data-color-hex="#A52A2A" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "brown.jpg" | asset_url }}')"> </div>
+          <div title="Red" data-color-name="Red" data-color-hex="#FF0000" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "red.jpg" | asset_url }}')"> </div>
+        </div>
+      </div>
+
+      <!-- [新增] 4. Pure Color 选择 -->
+      <div class="control-group mb-5">
+        <label class="block text-sm font-medium text-gray-700 mb-2">4. 选择色彩模式:</label>
+        <div id="pure-color-selector" class="flex items-center gap-4">
+          <div>
+            <input type="radio" id="pure-color-standard" name="pure-color" value="Standard" class="hidden peer" checked>
+            <label for="pure-color-standard" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100">                           
+              <div class="block">
+                <div class="w-full text-sm font-semibold">标准</div>
+                <div class="w-full text-xs">Standard (show texture)</div>
+              </div>
+            </label>
           </div>
-          <div title="Apple Green" data-color-name="Apple Green" data-color-hex="#77B800"
-               class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-               style="background-image: url('{{ "applegreen.jpg" | asset_url }}')">
+          <div>
+            <input type="radio" id="pure-color-on" name="pure-color" value="Pure Color" class="hidden peer">
+            <label for="pure-color-on" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100">
+              <div class="block">
+                <div class="w-full text-sm font-semibold">纯色</div>
+                <div class="w-full text-xs">With Pure Color</div>
+              </div>
+            </label>
           </div>
-          <div title="Black" data-color-name="Black" data-color-hex="#000000"
-               class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-               style="background-image: url('{{ "black.jpg" | asset_url }}')">
-          </div>
-           <div title="Blue" data-color-name="Blue" data-color-hex="#0000FF"
-               class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-               style="background-image: url('{{ "blue.jpg" | asset_url }}')">
-          </div>
-          <div title="Brown" data-color-name="Brown" data-color-hex="#A52A2A"
-               class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-               style="background-image: url('{{ "brown.jpg" | asset_url }}')">
-          </div>
-           <div title="Red" data-color-name="Red" data-color-hex="#FF0000"
-               class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-               style="background-image: url('{{ "red.jpg" | asset_url }}')">
-          </div>
-          <!-- 在这里添加更多颜色... -->
         </div>
       </div>
 
@@ -159,15 +160,15 @@ const initializeKonvaApp = (sectionElement) => {
   if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
   konvaContainer.dataset.initialized = 'true';
 
-  console.log("Konva: 初始化开始 (版本 2.2 - 修正版)...");
+  console.log("Konva: 初始化开始 (版本 2.4 - 集成纯色模式)...");
 
   // --- 1. 获取所有 HTML 元素 ---
   const sizeSelector = sectionElement.querySelector('#size-selector');
   const fixingTypeSelector = sectionElement.querySelector('#fixing-type-selector');
   const materialSelector = sectionElement.querySelector('#material-selector');
   const labelColorSelector = sectionElement.querySelector('#label-color-selector');
+  const pureColorSelector = sectionElement.querySelector('#pure-color-selector'); // [新增]
   const textInput = sectionElement.querySelector('#text-input');
-  // **已修正**: `sectionEment` -> `sectionElement`
   const fontSizeInput = sectionElement.querySelector('#font-size-input');
   const colorInput = sectionElement.querySelector('#color-input');
   const addToCartBtn = sectionElement.querySelector('#add-to-cart-btn');
@@ -192,11 +193,8 @@ const initializeKonvaApp = (sectionElement) => {
   mainLayer.add(backgroundRect);
 
   const colorOverlayRect = new Konva.Rect({
-      x: 0, y: 0,
-      width: baseWidth, height: initialHeight,
-      fill: '#FFFFFF',
-      opacity: 0,
-      name: 'color-overlay'
+      x: 0, y: 0, width: baseWidth, height: initialHeight,
+      fill: '#FFFFFF', opacity: 0, name: 'color-overlay'
   });
   mainLayer.add(colorOverlayRect);
 
@@ -205,8 +203,7 @@ const initializeKonvaApp = (sectionElement) => {
   konvaText.offsetX(konvaText.width() / 2);
   konvaText.offsetY(konvaText.height() / 2);
 
-  // --- 3. 定义可重用的函数 (及辅助函数) ---
-  // **已恢复**: 所有辅助函数现在都在 initializeKonvaApp 内部，以确保正确的作用域
+  // --- 3. 定义可重用的函数 ---
   const GUIDELINE_OFFSET = 5;
 
   function getLineGuideStops() {
@@ -269,12 +266,21 @@ const initializeKonvaApp = (sectionElement) => {
     imageObj.src = materialUrl;
   };
   
+  // [已更新] 函数现在会检查 "Pure Color" 的状态
   const applyLabelColor = (colorHex) => {
       colorOverlayRect.fill(colorHex);
-      if (colorHex.toUpperCase() === '#FFFFFF') {
-          colorOverlayRect.opacity(0);
+      const isPureColor = pureColorSelector.querySelector('#pure-color-on').checked;
+
+      if (isPureColor) {
+          // 纯色模式: 任何颜色都完全不透明 (包括白色)
+          colorOverlayRect.opacity(1.0);
       } else {
-          colorOverlayRect.opacity(0.7);
+          // 标准模式: 白色=无色(透明), 其他颜色半透明
+          if (colorHex.toUpperCase() === '#FFFFFF') {
+              colorOverlayRect.opacity(0);
+          } else {
+              colorOverlayRect.opacity(0.7);
+          }
       }
       mainLayer.batchDraw();
   };
@@ -298,17 +304,38 @@ const initializeKonvaApp = (sectionElement) => {
       const newColor = swatch.dataset.colorHex;
       applyLabelColor(newColor);
   });
+
+  // [新增] 为 "Pure Color" 选择器添加事件监听
+  pureColorSelector.addEventListener('change', () => {
+      const activeSwatch = labelColorSelector.querySelector('.color-swatch.active');
+      if (activeSwatch) {
+          applyLabelColor(activeSwatch.dataset.colorHex);
+      }
+  });
   
-  textInput.addEventListener('input', (e) => { konvaText.text(e.target.value || ' '); konvaText.offsetX(konvaText.width() / 2); mainLayer.batchDraw(); });
-  fontSizeInput.addEventListener('input', (e) => { konvaText.fontSize(parseInt(e.target.value, 10)); konvaText.offsetX(konvaText.width()/2); konvaText.offsetY(konvaText.height()/2); mainLayer.batchDraw(); });
-  colorInput.addEventListener('input', (e) => { konvaText.fill(e.target.value); mainLayer.batchDraw(); });
+  textInput.addEventListener('input', (e) => { 
+      konvaText.text(e.target.value || ' '); 
+      konvaText.offsetX(konvaText.width() / 2); 
+      mainLayer.batchDraw(); 
+  });
+
+  fontSizeInput.addEventListener('input', (e) => { 
+      konvaText.fontSize(parseInt(e.target.value, 10)); 
+      konvaText.offsetX(konvaText.width()/2); 
+      konvaText.offsetY(konvaText.height()/2); 
+      mainLayer.batchDraw(); 
+  });
+
+  colorInput.addEventListener('input', (e) => { 
+      konvaText.fill(e.target.value); 
+      mainLayer.batchDraw(); 
+  });
   
   mainLayer.on('dragmove', (e) => {
     guideLayer.find('.guid-line').forEach((l) => l.destroy());
     const lineGuideStops = getLineGuideStops();
     const itemBounds = getObjectSnappingEdges(e.target);
     const guides = [];
-
     lineGuideStops.vertical.forEach((lineGuide) => {
       itemBounds.vertical.forEach((itemBound) => {
         const diff = Math.abs(lineGuide - itemBound.guide);
@@ -327,7 +354,6 @@ const initializeKonvaApp = (sectionElement) => {
         }
       });
     });
-
     drawGuides(guides);
     guideLayer.batchDraw();
   });
@@ -337,6 +363,7 @@ const initializeKonvaApp = (sectionElement) => {
     guideLayer.batchDraw();
   });
 
+  // [已更新] "添加到购物车" 按钮事件
   addToCartBtn.addEventListener('click', (e) => {
     e.preventDefault();
     guideLayer.destroyChildren();
@@ -349,9 +376,9 @@ const initializeKonvaApp = (sectionElement) => {
     const selectedFixingType = fixingTypeSelector.querySelector('input[name="fixing-type"]:checked').value;
     const selectedMaterialInput = materialSelector.querySelector('input[name="label-material"]:checked');
     const selectedMaterialName = selectedMaterialInput.nextElementSibling.querySelector('.text-xs').textContent;
-    
     const selectedColorSwatch = labelColorSelector.querySelector('.color-swatch.active');
     const selectedColorName = selectedColorSwatch ? selectedColorSwatch.dataset.colorName : 'N/A';
+    const selectedPureColorMode = pureColorSelector.querySelector('input[name="pure-color"]:checked').value; // [新增]
 
     const previewImage = stage.toDataURL({ mimeType: 'image/jpeg', quality: 0.7 });
 
@@ -365,6 +392,7 @@ const initializeKonvaApp = (sectionElement) => {
           '固定方式': selectedFixingType,
           '材质': selectedMaterialName,
           '标签颜色': selectedColorName,
+          '色彩模式': selectedPureColorMode, // [新增]
           '定制文字': textInput.value,
           '字体大小': fontSizeInput.value,
           '字体颜色': colorInput.value,
@@ -386,7 +414,7 @@ const initializeKonvaApp = (sectionElement) => {
   }
 
   stage.batchDraw();
-  console.log("Konva: 初始化流程完成！ (版本 2.2)");
+  console.log("Konva: 初始化流程完成！ (版本 2.4)");
 };
   
 // ---- 启动器代码 (bootstrapper) ----
@@ -415,9 +443,8 @@ const bootstrapper = () => {
 
 document.addEventListener('turbo:load', bootstrapper);
 document.addEventListener('shopify:section:load', (event) => {
-    // 当 Shopify 编辑器重新加载此部分时，我们只需要在那个特定 section 上重新运行初始化
     const sectionElement = event.target;
-    if (sectionElement) {
+    if (sectionElement && sectionElement.querySelector('#konva-container')) {
         initializeKonvaApp(sectionElement);
     }
 });
