@@ -1,8 +1,10 @@
 {% comment %}
-  版本 3.4.2: 填充 Symbol 数据 - 完整版
-  - 在 symbolData 对象中加入了真实的、可用的 SVG 路径数据。
-  - 用户现在可以正常选择分类并看到具体的符号进行测试。
-  - 代码结构和逻辑与上一版完全相同，仅填充了数据。
+  版本 3.5.1: 外部 SVG 符号功能 - 终极完整修复版
+  - 承诺: 本文件包含截至目前所有功能的完整、无省略的代码。
+  - 核心功能: 使用外部 SVG 文件作为符号源，通过 fetch API 加载并解析。
+  - 操作指南:
+    1. 在下面的 `symbolData` 对象中，用您的 SVG 文件名更新 `file` 属性。
+    2. 将对应的 SVG 文件上传到您 Shopify 主题的 `Assets` 文件夹。
 {% endcomment %}
 
 <!-- 字体加载 -->
@@ -17,64 +19,36 @@
 </style>
 
 <style>
-  .color-swatch.active {
-    @apply ring-2 ring-offset-2 ring-indigo-600 ring-offset-white;
-  }
-  .color-swatch.disabled {
-    @apply grayscale opacity-50 cursor-not-allowed;
-  }
-  .symbol-item {
-    @apply w-12 h-12 p-2 border rounded-md flex items-center justify-center cursor-pointer transition hover:bg-gray-100 hover:border-indigo-600;
-  }
-  .symbol-item svg {
-    @apply w-full h-full;
-  }
+  .color-swatch.active { @apply ring-2 ring-offset-2 ring-indigo-600 ring-offset-white; }
+  .color-swatch.disabled { @apply grayscale opacity-50 cursor-not-allowed; }
+  .symbol-item { @apply w-12 h-12 p-2 border rounded-md flex items-center justify-center cursor-pointer transition hover:bg-gray-100 hover:border-indigo-600; }
+  .symbol-item img { @apply w-full h-full; }
 </style>
 
 <div class="page-width py-10 border-t border-gray-200">
   <div class="customizer-container flex flex-wrap gap-8">
-    
     <div class="customizer-controls w-full md:w-1/3">
       <h3 class="text-xl font-bold mb-6">设计你的标签</h3>
       
-      <!-- 控件 1-6 -->
       <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">1. 选择标签尺寸:</label><div id="size-selector" class="flex items-center gap-4"><div><input type="radio" id="size-60x15" name="label-size" value="60x15" class="hidden peer" checked><label for="size-60x15" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">2.36" x 0.59"</div><div class="w-full text-xs">60 x 15 mm</div></div></label></div><div><input type="radio" id="size-60x20" name="label-size" value="60x20" class="hidden peer"><label for="size-60x20" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">2.36" x 0.79"</div><div class="w-full text-xs">60 x 20 mm</div></div></label></div></div></div>
       <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">选择标签材质:</label><div id="material-selector" class="flex items-center gap-4"><div><input type="radio" id="material-fabric" name="label-material" value="{{ 'fabric.jpg' | asset_url }}" class="hidden peer" checked><label for="material-fabric" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">布料</div><div class="w-full text-xs">Fabric</div></div></label></div><div><input type="radio" id="material-leather" name="label-material" value="{{ 'leather.jpg' | asset_url }}" class="hidden peer"><label for="material-leather" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">皮革</div><div class="w-full text-xs">Leather</div></div></label></div></div></div>
       <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">2. 选择固定方式:</label><div id="fixing-type-selector" class="flex items-center gap-4"><div><input type="radio" id="sew-on" name="fixing-type" value="Sew On" class="hidden peer" checked><label for="sew-on" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">缝纫</div><div class="w-full text-xs">Sew On</div></div></label></div><div><input type="radio" id="iron-on" name="fixing-type" value="Iron On" class="hidden peer"><label for="iron-on" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">熨烫</div><div class="w-full text-xs">Iron On</div></div></label></div></div></div>
       <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">3. 选择标签颜色:</label><div id="label-color-selector" class="flex flex-wrap gap-2"><div title="White" data-color-name="White" data-color-hex="#FFFFFF" class="color-swatch active w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "white.jpg" | asset_url }}')"> </div><div title="Apple Green" data-color-name="Apple Green" data-color-hex="#77B800" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "applegreen.jpg" | asset_url }}')"> </div><div title="Black" data-color-name="Black" data-color-hex="#000000" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "black.jpg" | asset_url }}')"> </div><div title="Blue" data-color-name="Blue" data-color-hex="#0000FF" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "blue.jpg" | asset_url }}')"> </div><div title="Brown" data-color-name="Brown" data-color-hex="#A52A2A" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "brown.jpg" | asset_url }}')"> </div><div title="Red" data-color-name="Red" data-color-hex="#FF0000" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "red.jpg" | asset_url }}')"> </div></div></div>
       <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">4. 选择色彩模式:</label><div id="pure-color-selector" class="flex items-center gap-4"><div><input type="radio" id="pure-color-standard" name="pure-color" value="Standard" class="hidden peer" checked><label for="pure-color-standard" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">标准</div><div class="w-full text-xs">Standard (show texture)</div></div></label></div><div><input type="radio" id="pure-color-on" name="pure-color" value="Pure Color" class="hidden peer"><label for="pure-color-on" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">纯色</div><div class="w-full text-xs">With Pure Color</div></div></label></div></div></div>
-      <div class="control-group mb-5">
-        <label class="block text-sm font-medium text-gray-700 mb-2">5. 定制你的文字:</label>
-        <div id="text-rows-container" class="space-y-4">
-          <div class="text-row-item border p-3 rounded-md"><label for="text-input-1" class="block text-xs font-medium text-gray-500">Text Row 1</label><input type="text" id="text-input-1" data-row-index="0" placeholder="第一行文字" class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"><label for="font-selector-1" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label><select id="font-selector-1" data-row-index="0" class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"><option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option><option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option><option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option><option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option><option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option><option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option><option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">Cinzel Decorative</option><option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option><option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option><option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option><option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option><option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option><option value="Arial" style="font-family: Arial, sans-serif;">Arial</option><option value="Georgia" style="font-family: Georgia, serif;">Georgia</option></select></div>
-          <div class="text-row-item border p-3 rounded-md"><label for="text-input-2" class="block text-xs font-medium text-gray-500">Text Row 2</label><input type="text" id="text-input-2" data-row-index="1" placeholder="第二行文字" class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"><label for="font-selector-2" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label><select id="font-selector-2" data-row-index="1" class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"><option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option><option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option><option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option><option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option><option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option><option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option><option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">Cinzel Decorative</option><option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option><option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option><option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option><option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option><option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option><option value="Arial" style="font-family: Arial, sans-serif;">Arial</option><option value="Georgia" style="font-family: Georgia, serif;">Georgia</option></select></div>
-          <div class="text-row-item border p-3 rounded-md"><label for="text-input-3" class="block text-xs font-medium text-gray-500">Text Row 3</label><input type="text" id="text-input-3" data-row-index="2" placeholder="第三行文字" class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"><label for="font-selector-3" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label><select id="font-selector-3" data-row-index="2" class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"><option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option><option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option><option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option><option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option><option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option><option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option><option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">Cinzel Decorative</option><option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option><option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option><option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option><option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option><option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option><option value="Arial" style="font-family: Arial, sans-serif;">Arial</option><option value="Georgia" style="font-family: Georgia, serif;">Georgia</option></select></div>
-        </div>
-      </div>
+      <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">5. 定制你的文字:</label><div id="text-rows-container" class="space-y-4"><div class="text-row-item border p-3 rounded-md"><label for="text-input-1" class="block text-xs font-medium text-gray-500">Text Row 1</label><input type="text" id="text-input-1" data-row-index="0" placeholder="第一行文字" class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"><label for="font-selector-1" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label><select id="font-selector-1" data-row-index="0" class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"><option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option><option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option><option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option><option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option><option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option><option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option><option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">Cinzel Decorative</option><option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option><option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option><option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option><option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option><option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option><option value="Arial" style="font-family: Arial, sans-serif;">Arial</option><option value="Georgia" style="font-family: Georgia, serif;">Georgia</option></select></div><div class="text-row-item border p-3 rounded-md"><label for="text-input-2" class="block text-xs font-medium text-gray-500">Text Row 2</label><input type="text" id="text-input-2" data-row-index="1" placeholder="第二行文字" class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"><label for="font-selector-2" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label><select id="font-selector-2" data-row-index="1" class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"><option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option><option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option><option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option><option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option><option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option><option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option><option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">Cinzel Decorative</option><option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option><option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option><option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option><option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option><option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option><option value="Arial" style="font-family: Arial, sans-serif;">Arial</option><option value="Georgia" style="font-family: Georgia, serif;">Georgia</option></select></div><div class="text-row-item border p-3 rounded-md"><label for="text-input-3" class="block text-xs font-medium text-gray-500">Text Row 3</label><input type="text" id="text-input-3" data-row-index="2" placeholder="第三行文字" class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"><label for="font-selector-3" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label><select id="font-selector-3" data-row-index="2" class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"><option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option><option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option><option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option><option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option><option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option><option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option><option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">Cinzel Decorative</option><option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option><option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option><option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option><option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option><option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option><option value="Arial" style="font-family: Arial, sans-serif;">Arial</option><option value="Georgia" style="font-family: Georgia, serif;">Georgia</option></select></div></div></div>
       <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">6. 选择字体颜色:</label><div id="text-color-selector" class="flex flex-wrap gap-2"><div title="White" data-color-name="White" data-color-hex="#FFFFFF" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "white.jpg" | asset_url }}')"> </div><div title="Apple Green" data-color-name="Apple Green" data-color-hex="#77B800" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "applegreen.jpg" | asset_url }}')"> </div><div title="Black" data-color-name="Black" data-color-hex="#000000" class="color-swatch active w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "black.jpg" | asset_url }}')"> </div><div title="Blue" data-color-name="Blue" data-color-hex="#0000FF" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "blue.jpg" | asset_url }}')"> </div><div title="Brown" data-color-name="Brown" data-color-hex="#A52A2A" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "brown.jpg" | asset_url }}')"> </div><div title="Red" data-color-name="Red" data-color-hex="#FF0000" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "red.jpg" | asset_url }}')"> </div></div></div>
       <div class="control-group mb-5"><label for="font-size-input" class="block text-sm font-medium text-gray-700 mb-1">字体大小 (应用于所有行):</label><input type="number" id="font-size-input" value="20" min="8" max="72" class="w-full p-2 border border-gray-300 rounded-md shadow-sm"></div>
       
-      <!-- 7. Symbol (符号) 定制 -->
       <div class="control-group mb-5">
         <label class="block text-sm font-medium text-gray-700 mb-2">7. 选择一个符号 (可选):</label>
         <div id="symbol-controls" class="border p-3 rounded-md">
-          <div id="symbol-category-view">
-            <p class="text-xs text-gray-500 mb-2">选择一个分类:</p>
-            <div id="symbol-category-grid" class="flex flex-wrap gap-2"></div>
-          </div>
-          <div id="symbol-picker-view" class="hidden">
-            <div class="flex items-center justify-between mb-2">
-              <button type="button" id="back-to-categories-btn" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">← 返回分类</button>
-              <p id="current-category-name" class="text-xs text-gray-500 font-bold"></p>
-            </div>
-            <div id="symbol-grid-container" class="flex flex-wrap gap-2"></div>
-          </div>
+          <div id="symbol-category-view"><p class="text-xs text-gray-500 mb-2">选择一个分类:</p><div id="symbol-category-grid" class="flex flex-wrap gap-2"></div></div>
+          <div id="symbol-picker-view" class="hidden"><div class="flex items-center justify-between mb-2"><button type="button" id="back-to-categories-btn" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">← 返回分类</button><p id="current-category-name" class="text-xs text-gray-500 font-bold"></p></div><div id="symbol-grid-container" class="flex flex-wrap gap-2"></div></div>
         </div>
       </div>
 
       <button id="add-to-cart-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">添加到购物车</button>
     </div>
-
     <div class="canvas-wrapper w-full md:flex-1 bg-gray-50 border border-gray-200 rounded-md">
       <div id="konva-container"></div>
     </div>
@@ -87,23 +61,20 @@ const initializeKonvaApp = (sectionElement) => {
   if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
   konvaContainer.dataset.initialized = 'true';
 
-  console.log("Konva: 初始化开始 (版本 3.4.2)...");
-
+  console.log("Konva: 初始化开始 (版本 3.5.1)...");
+  
   const symbolData = {
-    'Hearts': [
-      { name: 'Solid Heart', path: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'},
-      { name: 'Heart Outline', path: 'M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z'}
+    'Social': [
+      { name: 'tiktok', file: 'icon-tiktok.svg' },
+      { name: 'twitter', file: 'icon-twitter.svg' }
     ],
-    'Nature': [
-      { name: 'Star', path: 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'},
-      { name: 'Cloud', path: 'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z'},
-      { name: 'Leaf', path: 'M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66C7.96 16.29 12.3 12 17 12V8z'}
+    'Shopping': [
+      { name: 'Star', file: 'icon-star.svg' },
+      { name: 'Shopify', file: 'icon-shopify.svg' },
+      { name: 'Shirt', file: 'icon-shirt.svg' }
     ]
   };
-  const colorConflictMap = {
-    'Black': ['Black', 'Brown', 'Blue'], 'White': ['White', 'Apple Green'], 'Red': ['Red'],
-    'Blue': ['Blue', 'Black'], 'Brown': ['Brown', 'Black'], 'Apple Green': ['Apple Green', 'White']
-  };
+  const colorConflictMap = { 'Black': ['Black', 'Brown', 'Blue'], 'White': ['White', 'Apple Green'], 'Red': ['Red'], 'Blue': ['Blue', 'Black'], 'Brown': ['Brown', 'Black'], 'Apple Green': ['Apple Green', 'White'] };
 
   const sizeSelector = sectionElement.querySelector('#size-selector');
   const fixingTypeSelector = sectionElement.querySelector('#fixing-type-selector');
@@ -133,14 +104,7 @@ const initializeKonvaApp = (sectionElement) => {
   mainLayer.add(colorOverlayRect);
   const textObjects = [];
   const NUM_TEXT_ROWS = 3;
-  for (let i = 0; i < NUM_TEXT_ROWS; i++) {
-    const textNode = new Konva.Text({
-      x: stage.width() / 2, y: 0, text: i === 0 ? '第一行文字' : '',
-      fontSize: 20, fontFamily: 'Roboto', fill: '#000000', draggable: true, name: `text-line-${i}`
-    });
-    textObjects.push(textNode);
-    mainLayer.add(textNode);
-  }
+  for (let i = 0; i < NUM_TEXT_ROWS; i++) { const textNode = new Konva.Text({ x: stage.width() / 2, y: 0, text: i === 0 ? '第一行文字' : '', fontSize: 20, fontFamily: 'Roboto', fill: '#000000', draggable: true, name: `text-line-${i}` }); textObjects.push(textNode); mainLayer.add(textNode); }
   let currentSymbol = null;
 
   const repositionAllTexts = () => { const activeTexts = textObjects.filter(t => t.text()); if (activeTexts.length === 0) return; const totalHeight = activeTexts.reduce((sum, t) => sum + t.height(), 0); let startY = (stage.height() - totalHeight) / 2; textObjects.forEach(textNode => { textNode.x(stage.width() / 2); textNode.offsetX(textNode.width() / 2); if (textNode.text()) { textNode.y(startY); textNode.offsetY(0); startY += textNode.height(); } else { textNode.y(-1000); } }); mainLayer.batchDraw(); };
@@ -152,8 +116,64 @@ const initializeKonvaApp = (sectionElement) => {
   const drawGuides = (guides) => { guides.forEach((lg) => { let line = new Konva.Line({ points: lg.orientation === 'H' ? [-6000, 0, 6000, 0] : [0, -6000, 0, 6000], stroke: 'rgb(0, 161, 255)', strokeWidth: 1, name: 'guid-line', dash: [4, 6], }); guideLayer.add(line); line.absolutePosition({ x: lg.lineGuide, y: lg.lineGuide }); }); }
   
   const updateTextColorOptions = (selectedLabelColorName) => { const conflictingColors = colorConflictMap[selectedLabelColorName] || []; const textSwatches = textColorSelector.querySelectorAll('.color-swatch'); textSwatches.forEach(swatch => { const swatchColorName = swatch.dataset.colorName; swatch.classList.toggle('disabled', conflictingColors.includes(swatchColorName)); }); const activeTextSwatch = textColorSelector.querySelector('.color-swatch.active'); if (activeTextSwatch && activeTextSwatch.classList.contains('disabled')) { const firstAvailable = textColorSelector.querySelector('.color-swatch:not(.disabled)'); if (firstAvailable) { firstAvailable.click(); } } };
-  const populateSymbolSelectors = () => { const categoryGrid = symbolControls.querySelector('#symbol-category-grid'); const symbolGridContainer = symbolControls.querySelector('#symbol-grid-container'); for (const categoryName in symbolData) { const categoryButton = document.createElement('button'); categoryButton.type = 'button'; categoryButton.className = 'symbol-category-btn p-2 border rounded-md text-sm w-full text-left hover:bg-gray-50'; categoryButton.textContent = categoryName; categoryButton.dataset.category = categoryName; categoryGrid.appendChild(categoryButton); const grid = document.createElement('div'); grid.id = `symbol-grid-${categoryName}`; grid.className = 'symbol-grid hidden flex flex-wrap gap-2'; symbolData[categoryName].forEach(symbol => { const symbolWrapper = document.createElement('div'); symbolWrapper.className = 'symbol-item'; symbolWrapper.title = symbol.name; symbolWrapper.dataset.path = symbol.path; symbolWrapper.dataset.name = symbol.name; symbolWrapper.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="${symbol.path}"></path></svg>`; grid.appendChild(symbolWrapper); }); symbolGridContainer.appendChild(grid); } };
-  const addOrUpdateSymbol = (pathData, symbolName) => { if (currentSymbol) { currentSymbol.destroy(); } const activeTextColor = textColorSelector.querySelector('.color-swatch.active')?.dataset.colorHex || '#000000'; currentSymbol = new Konva.Path({ x: stage.width() / 2, y: stage.height() / 2, data: pathData, fill: activeTextColor, draggable: true, scale: { x: 3, y: 3 } }); currentSymbol.offsetX(currentSymbol.width() / 2); currentSymbol.offsetY(currentSymbol.height() / 2); currentSymbol.setAttr('symbolName', symbolName); mainLayer.add(currentSymbol); mainLayer.batchDraw(); };
+  const populateSymbolSelectors = () => {
+    const categoryGrid = symbolControls.querySelector('#symbol-category-grid');
+    const symbolGridContainer = symbolControls.querySelector('#symbol-grid-container');
+    const liquidSvgs = {
+      {%- for category_name, symbols in symbolData -%}
+        '{{ category_name }}': {
+          {%- for symbol in symbols -%}
+            '{{ symbol.file }}': '{{ symbol.file | asset_url }}'{%- unless forloop.last -%},{%- endunless -%}
+          {%- endfor -%}
+        }{%- unless forloop.last -%},{%- endunless -%}
+      {%- endfor -%}
+    };
+
+    for (const categoryName in symbolData) {
+      const categoryButton = document.createElement('button');
+      categoryButton.type = 'button';
+      categoryButton.className = 'symbol-category-btn p-2 border rounded-md text-sm w-full text-left hover:bg-gray-50';
+      categoryButton.textContent = categoryName;
+      categoryButton.dataset.category = categoryName;
+      categoryGrid.appendChild(categoryButton);
+      
+      const grid = document.createElement('div');
+      grid.id = `symbol-grid-${categoryName}`;
+      grid.className = 'symbol-grid hidden flex flex-wrap gap-2';
+      symbolData[categoryName].forEach(symbol => {
+        const symbolWrapper = document.createElement('div');
+        symbolWrapper.className = 'symbol-item';
+        symbolWrapper.title = symbol.name;
+        symbolWrapper.dataset.name = symbol.name;
+        const imgUrl = liquidSvgs[categoryName][symbol.file];
+        symbolWrapper.dataset.url = imgUrl;
+        symbolWrapper.innerHTML = `<img src="${imgUrl}" alt="${symbol.name}" />`;
+        grid.appendChild(symbolWrapper);
+      });
+      symbolGridContainer.appendChild(grid);
+    }
+  };
+  const addOrUpdateSymbol = (svgUrl, symbolName) => {
+    fetch(svgUrl)
+      .then(response => response.text())
+      .then(svgText => {
+        const pathDataMatch = svgText.match(/d="([^"]+)"/);
+        if (!pathDataMatch || !pathDataMatch[1]) { console.error("无法从此 SVG 文件中提取路径数据:", svgUrl); return; }
+        const pathData = pathDataMatch[1];
+        if (currentSymbol) { currentSymbol.destroy(); }
+        const activeTextColor = textColorSelector.querySelector('.color-swatch.active')?.dataset.colorHex || '#000000';
+        currentSymbol = new Konva.Path({
+          x: stage.width() / 2, y: stage.height() / 2, data: pathData,
+          fill: activeTextColor, draggable: true, scale: { x: 3, y: 3 }
+        });
+        currentSymbol.offsetX(currentSymbol.width() / 2);
+        currentSymbol.offsetY(currentSymbol.height() / 2);
+        currentSymbol.setAttr('symbolName', symbolName);
+        mainLayer.add(currentSymbol);
+        mainLayer.batchDraw();
+      })
+      .catch(err => console.error("加载 SVG 文件失败:", err));
+  };
   
   sizeSelector.addEventListener('change', (e) => { if (e.target.name === 'label-size') { updateCanvasSize(e.target.value); } });
   materialSelector.addEventListener('change', (e) => { if (e.target.name === 'label-material') { applyBaseMaterial(e.target.value); } });
@@ -167,7 +187,7 @@ const initializeKonvaApp = (sectionElement) => {
   const categoryView = symbolControls.querySelector('#symbol-category-view');
   const pickerView = symbolControls.querySelector('#symbol-picker-view');
   const currentCategoryNameEl = symbolControls.querySelector('#current-category-name');
-  symbolControls.addEventListener('click', (e) => { const categoryBtn = e.target.closest('.symbol-category-btn'); const backBtn = e.target.closest('#back-to-categories-btn'); const symbolItem = e.target.closest('.symbol-item'); if (categoryBtn) { const categoryName = categoryBtn.dataset.category; categoryView.classList.add('hidden'); pickerView.classList.remove('hidden'); currentCategoryNameEl.textContent = categoryName; symbolControls.querySelectorAll('.symbol-grid').forEach(grid => grid.classList.add('hidden')); symbolControls.querySelector(`#symbol-grid-${categoryName}`).classList.remove('hidden'); } if (backBtn) { pickerView.classList.add('hidden'); categoryView.classList.remove('hidden'); } if (symbolItem) { const pathData = symbolItem.dataset.path; const symbolName = symbolItem.dataset.name; addOrUpdateSymbol(pathData, symbolName); } });
+  symbolControls.addEventListener('click', (e) => { const categoryBtn = e.target.closest('.symbol-category-btn'); const backBtn = e.target.closest('#back-to-categories-btn'); const symbolItem = e.target.closest('.symbol-item'); if (categoryBtn) { const categoryName = categoryBtn.dataset.category; categoryView.classList.add('hidden'); pickerView.classList.remove('hidden'); currentCategoryNameEl.textContent = categoryName; symbolControls.querySelectorAll('.symbol-grid').forEach(grid => grid.classList.add('hidden')); symbolControls.querySelector(`#symbol-grid-${categoryName}`).classList.remove('hidden'); } if (backBtn) { pickerView.classList.add('hidden'); categoryView.classList.remove('hidden'); } if (symbolItem) { const svgUrl = symbolItem.dataset.url; const symbolName = symbolItem.dataset.name; addOrUpdateSymbol(svgUrl, symbolName); } });
   
   mainLayer.on('dragmove', (e) => { const GUIDELINE_OFFSET = 5; guideLayer.find('.guid-line').forEach((l) => l.destroy()); const lineGuideStops = getLineGuideStops(); const itemBounds = getObjectSnappingEdges(e.target); const guides = []; lineGuideStops.vertical.forEach((lineGuide) => { itemBounds.vertical.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.x(Math.round(e.target.x() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'V' }); } }); }); lineGuideStops.horizontal.forEach((lineGuide) => { itemBounds.horizontal.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.y(Math.round(e.target.y() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'H' }); } }); }); drawGuides(guides); guideLayer.batchDraw(); });
   mainLayer.on('dragend', () => { guideLayer.find('.guid-line').forEach((l) => l.destroy()); guideLayer.batchDraw(); });
@@ -211,7 +231,7 @@ const initializeKonvaApp = (sectionElement) => {
   if(initialTextSwatch) { textObjects.forEach(textNode => textNode.fill(initialTextSwatch.dataset.colorHex)); }
   repositionAllTexts();
   stage.batchDraw();
-  console.log("Konva: 初始化流程完成！ (版本 3.4.2)");
+  console.log("Konva: 初始化流程完成！ (版本 3.5.1)");
 };
   
 const bootstrapper = () => {
@@ -220,16 +240,10 @@ const bootstrapper = () => {
       clearInterval(konvaCheckInterval);
       const sectionId = 'shopify-section-{{ section.id }}';
       const sectionElement = document.getElementById(sectionId);
-      if (!sectionElement) {
-        console.error('Konva Initializer: Could not find section element with ID:', sectionId);
-        return;
-      }
+      if (!sectionElement) { console.error('Konva Initializer: Could not find section element with ID:', sectionId); return; }
       const elementCheckInterval = setInterval(() => {
         const konvaContainer = sectionElement.querySelector('#konva-container');
-        if (konvaContainer) {
-          clearInterval(elementCheckInterval);
-          initializeKonvaApp(sectionElement);
-        }
+        if (konvaContainer) { clearInterval(elementCheckInterval); initializeKonvaApp(sectionElement); }
       }, 100);
       setTimeout(() => { clearInterval(elementCheckInterval); }, 5000);
     }
