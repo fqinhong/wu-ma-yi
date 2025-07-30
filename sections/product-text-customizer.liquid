@@ -1,10 +1,9 @@
 {% comment %}
-  版本 3.5.4: 外部 SVG 功能 - 文件名同步修复版
-  - 修复: `all_symbol_files` Liquid 变量现在与 `symbolData` JavaScript 对象中的文件名完全同步。
+  版本 3.5.5: 外部 SVG 功能 - 尺寸显示修复版
+  - 修复: 解决了 SVG 图片渲染为 0x0 像素的问题。
+  - 核心改动: 借鉴最佳实践，将尺寸类 (w-10 h-10) 从父 div.symbol-item 移至子 <img> 标签本身，
+    为其提供明确的渲染尺寸。
   - 承诺: 本文件包含截至目前所有功能的完整、无省略、可直接运行的代码。
-  - 操作指南:
-    未来添加新符号时，请务必确保同时将【文件名.svg】添加到下面的 `all_symbol_files` 字符串中，
-    并在 `symbolData` 对象中定义它的分类、名称和文件名。
 {% endcomment %}
 
 <!-- 字体加载 -->
@@ -21,8 +20,10 @@
 <style>
   .color-swatch.active { @apply ring-2 ring-offset-2 ring-indigo-600 ring-offset-white; }
   .color-swatch.disabled { @apply grayscale opacity-50 cursor-not-allowed; }
-  .symbol-item { @apply w-12 h-12 p-2 border rounded-md flex items-center justify-center cursor-pointer transition hover:bg-gray-100 hover:border-indigo-600; }
-  .symbol-item img { @apply w-full h-full; }
+  /* [修复] 父容器不再有固定尺寸，只负责布局和样式 */
+  .symbol-item { @apply p-1 border rounded-md flex items-center justify-center cursor-pointer transition hover:bg-gray-100 hover:border-indigo-600; }
+  /* [修复] 图片本身拥有固定尺寸 */
+  .symbol-item img { @apply w-10 h-10; }
 </style>
 
 <div class="page-width py-10 border-t border-gray-200">
@@ -61,20 +62,16 @@ const initializeKonvaApp = (sectionElement) => {
   if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
   konvaContainer.dataset.initialized = 'true';
 
-  console.log("Konva: 初始化开始 (版本 3.5.4)...");
+  console.log("Konva: 初始化开始 (版本 3.5.5)...");
   
-  // [修复] 第 1 步: 在 Liquid 中定义所有需要 URL 的文件名。
-  // **确保这个列表中的文件名与您上传到 Assets 的文件名完全一致！**
   {%- assign all_symbol_files = "icon-tiktok.svg,icon-twitter.svg,icon-star.svg,icon-shopify.svg,icon-shirt.svg" | split: "," -%}
   
-  // [修复] 第 2 步: 让 Liquid 生成一个包含所有 URL 的 JS 对象
   const allSymbolUrls = {
     {%- for file in all_symbol_files -%}
       "{{ file }}": "{{ file | asset_url }}"{%- unless forloop.last -%},{%- endunless -%}
     {%- endfor -%}
   };
 
-  // [修复] 第 3 步: 确保这里的 'file' 值与上面的列表和您上传的文件名完全匹配
   const symbolData = {
     'Social': [
       { name: 'TikTok', file: 'icon-tiktok.svg' },
@@ -150,7 +147,8 @@ const initializeKonvaApp = (sectionElement) => {
         const imgUrl = allSymbolUrls[symbol.file];
         if (imgUrl) {
           symbolWrapper.dataset.url = imgUrl;
-          symbolWrapper.innerHTML = `<img src="${imgUrl}" alt="${symbol.name}" />`;
+          // [修复] 将尺寸类直接应用到 <img> 标签
+          symbolWrapper.innerHTML = `<img src="${imgUrl}" alt="${symbol.name}" class="w-10 h-10" />`;
         } else {
           console.warn(`找不到符号文件的 URL: ${symbol.file}`);
           symbolWrapper.innerHTML = `<span>?</span>`;
@@ -238,7 +236,7 @@ const initializeKonvaApp = (sectionElement) => {
   if(initialTextSwatch) { textObjects.forEach(textNode => textNode.fill(initialTextSwatch.dataset.colorHex)); }
   repositionAllTexts();
   stage.batchDraw();
-  console.log("Konva: 初始化流程完成！ (版本 3.5.4)");
+  console.log("Konva: 初始化流程完成！ (版本 3.5.5)");
 };
   
 const bootstrapper = () => {
