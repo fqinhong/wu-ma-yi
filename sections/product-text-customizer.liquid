@@ -1,11 +1,10 @@
 {% comment %}
-  版本 3.5.3: 外部 SVG 功能 - 文件名匹配修复版
-  - 修复: symbolData 和 all_symbol_files 列表中的文件名现在统一为更简洁的格式 (如 'icon-star.svg')，
-    以解决因文件名不匹配而导致符号显示为 '?' 的问题。
+  版本 3.5.4: 外部 SVG 功能 - 文件名同步修复版
+  - 修复: `all_symbol_files` Liquid 变量现在与 `symbolData` JavaScript 对象中的文件名完全同步。
   - 承诺: 本文件包含截至目前所有功能的完整、无省略、可直接运行的代码。
   - 操作指南:
-    1. 确保您上传到 Assets 的 SVG 文件名与下面 `all_symbol_files` 列表中的字符串完全一致。
-    2. 如果要添加新符号，请同时更新 `all_symbol_files` 列表 和 `symbolData` 对象。
+    未来添加新符号时，请务必确保同时将【文件名.svg】添加到下面的 `all_symbol_files` 字符串中，
+    并在 `symbolData` 对象中定义它的分类、名称和文件名。
 {% endcomment %}
 
 <!-- 字体加载 -->
@@ -62,10 +61,11 @@ const initializeKonvaApp = (sectionElement) => {
   if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
   konvaContainer.dataset.initialized = 'true';
 
-  console.log("Konva: 初始化开始 (版本 3.5.3)...");
+  console.log("Konva: 初始化开始 (版本 3.5.4)...");
   
-  // [修复] 第 1 步: 在 Liquid 中定义所有需要 URL 的文件名
-  {%- assign all_symbol_files = "icon-heart-solid.svg,icon-heart-outline.svg,icon-star.svg,icon-cloud.svg,icon-leaf.svg" | split: "," -%}
+  // [修复] 第 1 步: 在 Liquid 中定义所有需要 URL 的文件名。
+  // **确保这个列表中的文件名与您上传到 Assets 的文件名完全一致！**
+  {%- assign all_symbol_files = "icon-tiktok.svg,icon-twitter.svg,icon-star.svg,icon-shopify.svg,icon-shirt.svg" | split: "," -%}
   
   // [修复] 第 2 步: 让 Liquid 生成一个包含所有 URL 的 JS 对象
   const allSymbolUrls = {
@@ -74,10 +74,11 @@ const initializeKonvaApp = (sectionElement) => {
     {%- endfor -%}
   };
 
+  // [修复] 第 3 步: 确保这里的 'file' 值与上面的列表和您上传的文件名完全匹配
   const symbolData = {
     'Social': [
-      { name: 'tiktok', file: 'icon-tiktok.svg' },
-      { name: 'twitter', file: 'icon-twitter.svg' }
+      { name: 'TikTok', file: 'icon-tiktok.svg' },
+      { name: 'Twitter', file: 'icon-twitter.svg' }
     ],
     'Shopping': [
       { name: 'Star', file: 'icon-star.svg' },
@@ -85,6 +86,7 @@ const initializeKonvaApp = (sectionElement) => {
       { name: 'Shirt', file: 'icon-shirt.svg' }
     ]
   };
+  
   const colorConflictMap = { 'Black': ['Black', 'Brown', 'Blue'], 'White': ['White', 'Apple Green'], 'Red': ['Red'], 'Blue': ['Blue', 'Black'], 'Brown': ['Brown', 'Black'], 'Apple Green': ['Apple Green', 'White'] };
 
   const sizeSelector = sectionElement.querySelector('#size-selector');
@@ -236,7 +238,7 @@ const initializeKonvaApp = (sectionElement) => {
   if(initialTextSwatch) { textObjects.forEach(textNode => textNode.fill(initialTextSwatch.dataset.colorHex)); }
   repositionAllTexts();
   stage.batchDraw();
-  console.log("Konva: 初始化流程完成！ (版本 3.5.3)");
+  console.log("Konva: 初始化流程完成！ (版本 3.5.4)");
 };
   
 const bootstrapper = () => {
