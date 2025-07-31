@@ -1,12 +1,8 @@
 {% comment %}
-  版本 3.7.0: 对象选择与变换 (Figma-like)
-  - 核心升级: 引入了 Konva.Transformer，实现了专业级的对象选择、拖动和缩放功能。
-  - 新增: 点击画布上的对象 (文本或符号) 会出现蓝色变换框。
-  - 新增: 用户可以通过拖动变换框的角点来缩放对象。
-  - 更新: 点击画布空白区域可以取消选择。
-  - 更新: 添加新符号时，会自动选中该符号。
-  - 更新: "添加到购物车"时会自动隐藏变换框，确保截图干净。
-  - 废弃: 移除了之前失败的高级对齐逻辑，回归稳定版本。
+  版本 3.7.1: 对象选择与变换功能 - 终极完整修复版
+  - 修复: 恢复了所有被省略的函数体和事件监听器，解决了功能不生效的致命错误。
+  - 核心功能: 引入 Konva.Transformer，实现了专业级的对象选择、拖动和缩放。
+  - 承诺: 本文件包含截至目前所有功能的完整、无省略、可直接运行的代码。
 {% endcomment %}
 
 <!-- 字体加载 -->
@@ -63,7 +59,7 @@ const initializeKonvaApp = (sectionElement) => {
   if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
   konvaContainer.dataset.initialized = 'true';
 
-  console.log("Konva: 初始化开始 (版本 3.7.0 - 对象变换)...");
+  console.log("Konva: 初始化开始 (版本 3.7.1)...");
   
   {%- assign all_symbol_files = "icon-tick.svg,icon-zoom.svg,icon-star.svg,icon-shopify.svg,icon-shirt.svg" | split: "," -%}
   const allSymbolUrls = { {%- for file in all_symbol_files -%} "{{ file }}": "{{ file | asset_url }}"{%- unless forloop.last -%},{%- endunless -%} {%- endfor -%} };
@@ -90,16 +86,15 @@ const initializeKonvaApp = (sectionElement) => {
   const stage = new Konva.Stage({ container: konvaContainer, width: baseWidth, height: initialHeight });
   const mainLayer = new Konva.Layer();
   stage.add(mainLayer);
-  
+
   // [核心升级] 1. 创建 Transformer 实例
   const transformer = new Konva.Transformer({
-    borderStroke: '#3B82F6', // Tailwind blue-500
+    borderStroke: '#3B82F6',
     anchorStroke: '#3B82F6',
-    anchorFill: '#EFF6FF', // Tailwind blue-100
+    anchorFill: '#EFF6FF',
     anchorSize: 10,
-    rotateEnabled: false, // 暂时禁用旋转
-    keepRatio: true, // 保持宽高比缩放
-    // 限制最小缩放尺寸
+    rotateEnabled: false,
+    keepRatio: true,
     boundBoxFunc: (oldBox, newBox) => {
       if (newBox.width < 10 || newBox.height < 10) {
         return oldBox;
@@ -118,13 +113,26 @@ const initializeKonvaApp = (sectionElement) => {
   for (let i = 0; i < NUM_TEXT_ROWS; i++) { const textNode = new Konva.Text({ x: stage.width() / 2, y: 0, text: i === 0 ? '第一行文字' : '', fontSize: 20, fontFamily: 'Roboto', fill: '#000000', draggable: true, name: `text-line-${i}` }); textObjects.push(textNode); mainLayer.add(textNode); }
   let currentSymbol = null;
 
-  const repositionAllTexts = () => { /* ... */ };
-  const updateCanvasSize = (newSizeValue) => { /* ... */ };
-  const applyBaseMaterial = (materialUrl) => { /* ... */ };
-  const applyLabelColor = (colorHex) => { /* ... */ };
-  const updateTextColorOptions = (selectedLabelColorName) => { /* ... */ };
-  const populateSymbolSelectors = () => { /* ... */ };
-  
+  const repositionAllTexts = () => { const activeTexts = textObjects.filter(t => t.text()); if (activeTexts.length === 0) return; const totalHeight = activeTexts.reduce((sum, t) => sum + t.height(), 0); let startY = (stage.height() - totalHeight) / 2; textObjects.forEach(textNode => { textNode.x(stage.width() / 2); textNode.offsetX(textNode.width() / 2); if (textNode.text()) { textNode.y(startY); textNode.offsetY(0); startY += textNode.height(); } else { textNode.y(-1000); } }); mainLayer.batchDraw(); };
+  const updateCanvasSize = (newSizeValue) => { const newRatio = sizeRatios[newSizeValue]; const newHeight = baseWidth * newRatio; konvaContainer.style.height = `${newHeight}px`; stage.height(newHeight); backgroundRect.height(newHeight); colorOverlayRect.height(newHeight); repositionAllTexts(); stage.batchDraw(); };
+  const applyBaseMaterial = (materialUrl) => { const imageObj = new Image(); imageObj.crossOrigin = 'Anonymous'; imageObj.onload = () => { backgroundRect.fillPatternImage(imageObj); backgroundRect.fillPatternRepeat('repeat'); backgroundRect.fill(null); mainLayer.batchDraw(); }; imageObj.src = materialUrl; };
+  const applyLabelColor = (colorHex) => { colorOverlayRect.fill(colorHex); const isPureColor = pureColorSelector.querySelector('#pure-color-on').checked; if (isPureColor) { colorOverlayRect.opacity(1.0); } else { if (colorHex.toUpperCase() === '#FFFFFF') { colorOverlayRect.opacity(0); } else { colorOverlayRect.opacity(0.7); } } mainLayer.batchDraw(); };
+  const updateTextColorOptions = (selectedLabelColorName) => { const conflictingColors = colorConflictMap[selectedLabelColorName] || []; const textSwatches = textColorSelector.querySelectorAll('.color-swatch'); textSwatches.forEach(swatch => { const swatchColorName = swatch.dataset.colorName; swatch.classList.toggle('disabled', conflictingColors.includes(swatchColorName)); }); const activeTextSwatch = textColorSelector.querySelector('.color-swatch.active'); if (activeTextSwatch && activeTextSwatch.classList.contains('disabled')) { const firstAvailable = textColorSelector.querySelector('.color-swatch:not(.disabled)'); if (firstAvailable) { firstAvailable.click(); } } };
+  const populateSymbolSelectors = () => {
+    const categoryGrid = symbolControls.querySelector('#symbol-category-grid');
+    const symbolGridContainer = symbolControls.querySelector('#symbol-grid-container');
+    for (const categoryName in symbolData) {
+      const categoryButton = document.createElement('button'); categoryButton.type = 'button'; categoryButton.className = 'symbol-category-btn p-2 border rounded-md text-sm w-full text-left hover:bg-gray-50'; categoryButton.textContent = categoryName; categoryButton.dataset.category = categoryName; categoryGrid.appendChild(categoryButton);
+      const grid = document.createElement('div'); grid.id = `symbol-grid-${categoryName}`; grid.className = 'symbol-grid hidden flex flex-wrap gap-2';
+      symbolData[categoryName].forEach(symbol => {
+        const symbolWrapper = document.createElement('div'); symbolWrapper.className = 'symbol-item'; symbolWrapper.title = symbol.name; symbolWrapper.dataset.name = symbol.name;
+        const imgUrl = allSymbolUrls[symbol.file];
+        if (imgUrl) { symbolWrapper.dataset.url = imgUrl; symbolWrapper.innerHTML = `<img src="${imgUrl}" alt="${symbol.name}" class="w-10 h-10" />`; } else { console.warn(`找不到符号文件的 URL: ${symbol.file}`); symbolWrapper.innerHTML = `<span>?</span>`; }
+        grid.appendChild(symbolWrapper);
+      });
+      symbolGridContainer.appendChild(grid);
+    }
+  };
   const addOrUpdateSymbol = (svgUrl, symbolName) => {
     fetch(svgUrl)
       .then(response => response.text())
@@ -132,143 +140,93 @@ const initializeKonvaApp = (sectionElement) => {
         const pathDataMatches = [...svgText.matchAll(/d="([^"]+)"/g)];
         if (pathDataMatches.length === 0) { console.error("无法从此 SVG 文件中提取任何路径数据:", svgUrl); return; }
         const combinedPathData = pathDataMatches.map(match => match[1]).join(' ');
-        if (currentSymbol) {
-          transformer.nodes([]); // 替换前先取消选中
-          currentSymbol.destroy();
-        }
+        if (currentSymbol) { transformer.nodes([]); currentSymbol.destroy(); }
         const activeTextColor = textColorSelector.querySelector('.color-swatch.active')?.dataset.colorHex || '#000000';
         currentSymbol = new Konva.Path({
           x: stage.width() / 2, y: stage.height() / 2, data: combinedPathData,
           fill: activeTextColor, draggable: true, scale: { x: 3, y: 3 }
         });
-        currentSymbol.offsetX(currentSymbol.width() / 2);
-        currentSymbol.offsetY(currentSymbol.height() / 2);
+        currentSymbol.offsetX(currentSymbol.width() / 2); currentSymbol.offsetY(currentSymbol.height() / 2);
         currentSymbol.setAttr('symbolName', symbolName);
         mainLayer.add(currentSymbol);
-        
-        // [核心升级] 2. 添加新符号后自动选中
         transformer.nodes([currentSymbol]);
-        
         mainLayer.batchDraw();
       })
       .catch(err => console.error("加载 SVG 文件失败:", err));
   };
-
-  sizeSelector.addEventListener('change', (e) => { /* ... */ });
-  materialSelector.addEventListener('change', (e) => { /* ... */ });
-  labelColorSelector.addEventListener('click', (e) => { /* ... */ });
-  pureColorSelector.addEventListener('change', () => { /* ... */ });
-  textColorSelector.addEventListener('click', (e) => { /* ... */ });
-  textRowsContainer.addEventListener('input', (e) => { /* ... */ });
-  textRowsContainer.addEventListener('change', (e) => { /* ... */ });
-  fontSizeInput.addEventListener('input', (e) => { /* ... */ });
-  symbolControls.addEventListener('click', (e) => { /* ... */ });
-
-  // [核心升级] 3. 添加舞台点击事件以处理选中/取消选中
+  
+  sizeSelector.addEventListener('change', (e) => { if (e.target.name === 'label-size') { updateCanvasSize(e.target.value); } });
+  materialSelector.addEventListener('change', (e) => { if (e.target.name === 'label-material') { applyBaseMaterial(e.target.value); } });
+  labelColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch) return; labelColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; const newColorName = swatch.dataset.colorName; applyLabelColor(newColorHex); updateTextColorOptions(newColorName); });
+  pureColorSelector.addEventListener('change', () => { const activeSwatch = labelColorSelector.querySelector('.color-swatch.active'); if (activeSwatch) { applyLabelColor(activeSwatch.dataset.colorHex); updateTextColorOptions(activeSwatch.dataset.colorName); } });
+  textColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch || swatch.classList.contains('disabled')) return; textColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; textObjects.forEach(textNode => textNode.fill(newColorHex)); if (currentSymbol) { currentSymbol.fill(newColorHex); } mainLayer.batchDraw(); });
+  textRowsContainer.addEventListener('input', (e) => { if (e.target.classList.contains('text-input')) { const index = e.target.dataset.rowIndex; const textNode = textObjects[index]; textNode.text(e.target.value); repositionAllTexts(); } });
+  textRowsContainer.addEventListener('change', (e) => { if (e.target.classList.contains('font-selector')) { const index = e.target.dataset.rowIndex; const textNode = textObjects[index]; textNode.fontFamily(e.target.value); repositionAllTexts(); } });
+  fontSizeInput.addEventListener('input', (e) => { const newSize = parseInt(e.target.value, 10); textObjects.forEach(textNode => textNode.fontSize(newSize)); repositionAllTexts(); });
+  
+  const categoryView = symbolControls.querySelector('#symbol-category-view');
+  const pickerView = symbolControls.querySelector('#symbol-picker-view');
+  const currentCategoryNameEl = symbolControls.querySelector('#current-category-name');
+  symbolControls.addEventListener('click', (e) => { const categoryBtn = e.target.closest('.symbol-category-btn'); const backBtn = e.target.closest('#back-to-categories-btn'); const symbolItem = e.target.closest('.symbol-item'); if (categoryBtn) { const categoryName = categoryBtn.dataset.category; categoryView.classList.add('hidden'); pickerView.classList.remove('hidden'); currentCategoryNameEl.textContent = categoryName; symbolControls.querySelectorAll('.symbol-grid').forEach(grid => grid.classList.add('hidden')); symbolControls.querySelector(`#symbol-grid-${categoryName}`).classList.remove('hidden'); } if (backBtn) { pickerView.classList.add('hidden'); categoryView.classList.remove('hidden'); } if (symbolItem) { const svgUrl = symbolItem.dataset.url; const symbolName = symbolItem.dataset.name; if(svgUrl) { addOrUpdateSymbol(svgUrl, symbolName); } } });
+  
   stage.on('click tap', (e) => {
-    // 如果点击的是背景或空白区域
     if (e.target === stage || e.target === backgroundRect || e.target === colorOverlayRect) {
-      transformer.nodes([]); // 取消所有选中
+      transformer.nodes([]);
       return;
     }
-
-    // 如果点击的是可拖动的对象 (文本或符号)
     if (e.target.draggable()) {
-      transformer.nodes([e.target]); // 选中该对象
+      transformer.nodes([e.target]);
     } else {
-      transformer.nodes([]); // 否则取消所有选中
+      transformer.nodes([]);
     }
   });
 
-  // [核心升级] 4. 添加到购物车前取消选中
+  // [修复] 移除旧的、简单的对齐逻辑
+  // mainLayer.on('dragmove', ...);
+  // mainLayer.on('dragend', ...);
+  
   addToCartBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    transformer.nodes([]); // 取消选中，隐藏变换框
-    mainLayer.draw(); // 确保变换框消失
-    // ... (剩余的 addToCart 逻辑)
+    transformer.nodes([]);
+    mainLayer.draw();
+    
+    const productForm = document.querySelector('form[action*="/cart/add"]');
+    const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
+    if (!variantIdInput || !variantIdInput.value) { alert('错误：找不到产品变体ID。'); return; }
+    const properties = {
+      'CustomTextPreview': stage.toDataURL({ mimeType: 'image/jpeg', quality: 0.7 }),
+      '尺寸': sizeSelector.querySelector('input[name="label-size"]:checked').value,
+      '固定方式': fixingTypeSelector.querySelector('input[name="fixing-type"]:checked').value,
+      '材质': materialSelector.querySelector('input[name="label-material"]:checked').nextElementSibling.querySelector('.text-xs').textContent,
+      '标签颜色': labelColorSelector.querySelector('.color-swatch.active')?.dataset.colorName || 'N/A',
+      '色彩模式': pureColorSelector.querySelector('input[name="pure-color"]:checked').value,
+      '字体大小': fontSizeInput.value,
+      '字体颜色': textColorSelector.querySelector('.color-swatch.active')?.dataset.colorName || 'N/A',
+    };
+    if (currentSymbol) { properties['Symbol'] = currentSymbol.getAttr('symbolName'); }
+    for (let i = 0; i < NUM_TEXT_ROWS; i++) {
+      const textVal = sectionElement.querySelector(`#text-input-${i+1}`).value;
+      if (textVal) {
+        properties[`Text Line ${i+1}`] = textVal;
+        properties[`Font Line ${i+1}`] = sectionElement.querySelector(`#font-selector-${i+1}`).value;
+      }
+    }
+    const formData = { items: [{ id: variantIdInput.value, quantity: 1, properties }] };
+    fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
+      .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
+      .catch(console.error);
   });
 
-  // --- 恢复所有函数的完整形态 ---
-  const fullFuncsAndListeners = () => {
-    const repositionAllTexts_full = () => { const activeTexts = textObjects.filter(t => t.text()); if (activeTexts.length === 0) return; const totalHeight = activeTexts.reduce((sum, t) => sum + t.height(), 0); let startY = (stage.height() - totalHeight) / 2; textObjects.forEach(textNode => { textNode.x(stage.width() / 2); textNode.offsetX(textNode.width() / 2); if (textNode.text()) { textNode.y(startY); textNode.offsetY(0); startY += textNode.height(); } else { textNode.y(-1000); } }); mainLayer.batchDraw(); };
-    const updateCanvasSize_full = (newSizeValue) => { const newRatio = sizeRatios[newSizeValue]; const newHeight = baseWidth * newRatio; konvaContainer.style.height = `${newHeight}px`; stage.height(newHeight); backgroundRect.height(newHeight); colorOverlayRect.height(newHeight); repositionAllTexts_full(); stage.batchDraw(); };
-    const applyBaseMaterial_full = (materialUrl) => { const imageObj = new Image(); imageObj.crossOrigin = 'Anonymous'; imageObj.onload = () => { backgroundRect.fillPatternImage(imageObj); backgroundRect.fillPatternRepeat('repeat'); backgroundRect.fill(null); mainLayer.batchDraw(); }; imageObj.src = materialUrl; };
-    const applyLabelColor_full = (colorHex) => { colorOverlayRect.fill(colorHex); const isPureColor = pureColorSelector.querySelector('#pure-color-on').checked; if (isPureColor) { colorOverlayRect.opacity(1.0); } else { if (colorHex.toUpperCase() === '#FFFFFF') { colorOverlayRect.opacity(0); } else { colorOverlayRect.opacity(0.7); } } mainLayer.batchDraw(); };
-    const updateTextColorOptions_full = (selectedLabelColorName) => { const conflictingColors = colorConflictMap[selectedLabelColorName] || []; const textSwatches = textColorSelector.querySelectorAll('.color-swatch'); textSwatches.forEach(swatch => { const swatchColorName = swatch.dataset.colorName; swatch.classList.toggle('disabled', conflictingColors.includes(swatchColorName)); }); const activeTextSwatch = textColorSelector.querySelector('.color-swatch.active'); if (activeTextSwatch && activeTextSwatch.classList.contains('disabled')) { const firstAvailable = textColorSelector.querySelector('.color-swatch:not(.disabled)'); if (firstAvailable) { firstAvailable.click(); } } };
-    const populateSymbolSelectors_full = () => {
-      const categoryGrid = symbolControls.querySelector('#symbol-category-grid');
-      const symbolGridContainer = symbolControls.querySelector('#symbol-grid-container');
-      for (const categoryName in symbolData) {
-        const categoryButton = document.createElement('button'); categoryButton.type = 'button'; categoryButton.className = 'symbol-category-btn p-2 border rounded-md text-sm w-full text-left hover:bg-gray-50'; categoryButton.textContent = categoryName; categoryButton.dataset.category = categoryName; categoryGrid.appendChild(categoryButton);
-        const grid = document.createElement('div'); grid.id = `symbol-grid-${categoryName}`; grid.className = 'symbol-grid hidden flex flex-wrap gap-2';
-        symbolData[categoryName].forEach(symbol => {
-          const symbolWrapper = document.createElement('div'); symbolWrapper.className = 'symbol-item'; symbolWrapper.title = symbol.name; symbolWrapper.dataset.name = symbol.name;
-          const imgUrl = allSymbolUrls[symbol.file];
-          if (imgUrl) { symbolWrapper.dataset.url = imgUrl; symbolWrapper.innerHTML = `<img src="${imgUrl}" alt="${symbol.name}" class="w-10 h-10" />`; } else { console.warn(`找不到符号文件的 URL: ${symbol.file}`); symbolWrapper.innerHTML = `<span>?</span>`; }
-          grid.appendChild(symbolWrapper);
-        });
-        symbolGridContainer.appendChild(grid);
-      }
-    };
-
-    sizeSelector.addEventListener('change', (e) => { if (e.target.name === 'label-size') { updateCanvasSize_full(e.target.value); } });
-    materialSelector.addEventListener('change', (e) => { if (e.target.name === 'label-material') { applyBaseMaterial_full(e.target.value); } });
-    labelColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch) return; labelColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; const newColorName = swatch.dataset.colorName; applyLabelColor_full(newColorHex); updateTextColorOptions_full(newColorName); });
-    pureColorSelector.addEventListener('change', () => { const activeSwatch = labelColorSelector.querySelector('.color-swatch.active'); if (activeSwatch) { applyLabelColor_full(activeSwatch.dataset.colorHex); updateTextColorOptions_full(activeSwatch.dataset.colorName); } });
-    textColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch || swatch.classList.contains('disabled')) return; textColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; textObjects.forEach(textNode => textNode.fill(newColorHex)); if (currentSymbol) { currentSymbol.fill(newColorHex); } mainLayer.batchDraw(); });
-    textRowsContainer.addEventListener('input', (e) => { if (e.target.classList.contains('text-input')) { const index = e.target.dataset.rowIndex; const textNode = textObjects[index]; textNode.text(e.target.value); repositionAllTexts_full(); } });
-    textRowsContainer.addEventListener('change', (e) => { if (e.target.classList.contains('font-selector')) { const index = e.target.dataset.rowIndex; const textNode = textObjects[index]; textNode.fontFamily(e.target.value); repositionAllTexts_full(); } });
-    fontSizeInput.addEventListener('input', (e) => { const newSize = parseInt(e.target.value, 10); textObjects.forEach(textNode => textNode.fontSize(newSize)); repositionAllTexts_full(); });
-    
-    const categoryView = symbolControls.querySelector('#symbol-category-view');
-    const pickerView = symbolControls.querySelector('#symbol-picker-view');
-    const currentCategoryNameEl = symbolControls.querySelector('#current-category-name');
-    symbolControls.addEventListener('click', (e) => { const categoryBtn = e.target.closest('.symbol-category-btn'); const backBtn = e.target.closest('#back-to-categories-btn'); const symbolItem = e.target.closest('.symbol-item'); if (categoryBtn) { const categoryName = categoryBtn.dataset.category; categoryView.classList.add('hidden'); pickerView.classList.remove('hidden'); currentCategoryNameEl.textContent = categoryName; symbolControls.querySelectorAll('.symbol-grid').forEach(grid => grid.classList.add('hidden')); symbolControls.querySelector(`#symbol-grid-${categoryName}`).classList.remove('hidden'); } if (backBtn) { pickerView.classList.add('hidden'); categoryView.classList.remove('hidden'); } if (symbolItem) { const svgUrl = symbolItem.dataset.url; const symbolName = symbolItem.dataset.name; if(svgUrl) { addOrUpdateSymbol(svgUrl, symbolName); } } });
-    
-    const originalAddToCart = addToCartBtn.onclick;
-    addToCartBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      transformer.nodes([]);
-      mainLayer.draw();
-      const productForm = document.querySelector('form[action*="/cart/add"]');
-      const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
-      if (!variantIdInput || !variantIdInput.value) { alert('错误：找不到产品变体ID。'); return; }
-      const properties = {
-        'CustomTextPreview': stage.toDataURL({ mimeType: 'image/jpeg', quality: 0.7 }),
-        '尺寸': sizeSelector.querySelector('input[name="label-size"]:checked').value,
-        '固定方式': fixingTypeSelector.querySelector('input[name="fixing-type"]:checked').value,
-        '材质': materialSelector.querySelector('input[name="label-material"]:checked').nextElementSibling.querySelector('.text-xs').textContent,
-        '标签颜色': labelColorSelector.querySelector('.color-swatch.active')?.dataset.colorName || 'N/A',
-        '色彩模式': pureColorSelector.querySelector('input[name="pure-color"]:checked').value,
-        '字体大小': fontSizeInput.value,
-        '字体颜色': textColorSelector.querySelector('.color-swatch.active')?.dataset.colorName || 'N/A',
-      };
-      if (currentSymbol) { properties['Symbol'] = currentSymbol.getAttr('symbolName'); }
-      for (let i = 0; i < NUM_TEXT_ROWS; i++) {
-        const textVal = sectionElement.querySelector(`#text-input-${i+1}`).value;
-        if (textVal) {
-          properties[`Text Line ${i+1}`] = textVal;
-          properties[`Font Line ${i+1}`] = sectionElement.querySelector(`#font-selector-${i+1}`).value;
-        }
-      }
-      const formData = { items: [{ id: variantIdInput.value, quantity: 1, properties }] };
-      fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
-        .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
-        .catch(console.error);
-    });
-
-    populateSymbolSelectors_full();
-    const initialMaterialUrl = materialSelector.querySelector('input[name="label-material"]:checked').value;
-    applyBaseMaterial_full(initialMaterialUrl);
-    const initialLabelSwatch = labelColorSelector.querySelector('.color-swatch.active');
-    if (initialLabelSwatch) { applyLabelColor_full(initialLabelSwatch.dataset.colorHex); updateTextColorOptions_full(initialLabelSwatch.dataset.colorName); }
-    const initialTextSwatch = textColorSelector.querySelector('.color-swatch.active');
-    if(initialTextSwatch) { textObjects.forEach(textNode => textNode.fill(initialTextSwatch.dataset.colorHex)); }
-    repositionAllTexts_full();
-    stage.batchDraw();
-  };
-  
-  fullFuncsAndListeners();
+  populateSymbolSelectors();
+  const initialMaterialUrl = materialSelector.querySelector('input[name="label-material"]:checked').value;
+  applyBaseMaterial(initialMaterialUrl);
+  const initialLabelSwatch = labelColorSelector.querySelector('.color-swatch.active');
+  if (initialLabelSwatch) { applyLabelColor(initialLabelSwatch.dataset.colorHex); updateTextColorOptions(initialLabelSwatch.dataset.colorName); }
+  const initialTextSwatch = textColorSelector.querySelector('.color-swatch.active');
+  if(initialTextSwatch) { textObjects.forEach(textNode => textNode.fill(initialTextSwatch.dataset.colorHex)); }
+  repositionAllTexts();
+  stage.batchDraw();
+  console.log("Konva: 初始化流程完成！ (版本 3.7.1)");
 };
   
 const bootstrapper = () => {
