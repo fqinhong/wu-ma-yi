@@ -272,9 +272,6 @@
   .h-10 {
     height: calc(var(--spacing) * 10);
   }
-  .h-12 {
-    height: calc(var(--spacing) * 12);
-  }
   .h-32 {
     height: calc(var(--spacing) * 32);
   }
@@ -287,14 +284,8 @@
   .w-10 {
     width: calc(var(--spacing) * 10);
   }
-  .w-12 {
-    width: calc(var(--spacing) * 12);
-  }
   .w-full {
     width: 100%;
-  }
-  .border-collapse {
-    border-collapse: collapse;
   }
   .transform {
     transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);

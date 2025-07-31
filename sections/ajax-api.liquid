@@ -1,7 +1,13 @@
+<div class="cart-content"></div>
+
+
 <script>
     async function ajaxAPI(){
         const cartRequest = await fetch("/cart.js");
         const cart = await cartRequest.json();
+
+        const cartContentDiv = document.querySelector(".cart-content");
+        cartContentDiv.textContent = `Cart's total items: ${cart.item_count}`;
         console.log(cart);
     }
 
