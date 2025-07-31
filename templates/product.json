@@ -108,14 +108,14 @@
         "padding_bottom": 28
       }
     },
-    "customizer": {
-      "type": "product-text-customizer",
-      "settings": {}
-    }
+    // "customizer": {
+    //   "type": "product-text-customizer",
+    //   "settings": {}
+    // }
   },
   "order": [
     "main",
-    "customizer",
+    // "customizer",
     "related-products"
   ]
 }

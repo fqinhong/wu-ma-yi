@@ -2,15 +2,34 @@
 
 
 <script>
-    async function ajaxAPI(){
-        const cartRequest = await fetch("/cart.js");
+    async function getCart(){
+        const cartRequest = await fetch(window.Shopify.routes.root + 'cart.js');
         const cart = await cartRequest.json();
 
-        const cartContentDiv = document.querySelector(".cart-content");
-        cartContentDiv.textContent = `Cart's total items: ${cart.item_count}`;
-        console.log(cart);
+        return cart;
     }
 
+    async function addToCart(variantId, quantity) {
+        const addToCartRequest = await fetch('/cart/add.js', {
+            method: "POST",
+            header: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                items: [
+                    {
+                        id: variantId,
+                        quantity: quantity,
+                    }
+
+                ]
+            })
+        })
+    }
+
+    async function ajaxAPI(){
+
+    }
     ajaxAPI();
 </script>
 
