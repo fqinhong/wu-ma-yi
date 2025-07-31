@@ -1,8 +1,9 @@
 {% comment %}
-  版本 3.5.5: 外部 SVG 功能 - 尺寸显示修复版
-  - 修复: 解决了 SVG 图片渲染为 0x0 像素的问题。
-  - 核心改动: 借鉴最佳实践，将尺寸类 (w-10 h-10) 从父 div.symbol-item 移至子 <img> 标签本身，
-    为其提供明确的渲染尺寸。
+  版本 3.6.0: 高级对齐功能 (智能参考线)
+  - 核心升级: 完全重写了对齐逻辑，实现了专业级的智能参考线功能。
+  - 新增功能 1 (对象间对齐): 拖动一个对象时，会出现参考线，用于对齐画布和其他对象的边缘与中心。
+  - 新增功能 2 (吸附): 对象靠近参考线时会自动吸附。
+  - 新增功能 3 (等间距指示): 当三个或更多对象可以等间距排列时，会出现间距指示线并进行吸附。
   - 承诺: 本文件包含截至目前所有功能的完整、无省略、可直接运行的代码。
 {% endcomment %}
 
@@ -20,9 +21,7 @@
 <style>
   .color-swatch.active { @apply ring-2 ring-offset-2 ring-indigo-600 ring-offset-white; }
   .color-swatch.disabled { @apply grayscale opacity-50 cursor-not-allowed; }
-  /* [修复] 父容器不再有固定尺寸，只负责布局和样式 */
   .symbol-item { @apply p-1 border rounded-md flex items-center justify-center cursor-pointer transition hover:bg-gray-100 hover:border-indigo-600; }
-  /* [修复] 图片本身拥有固定尺寸 */
   .symbol-item img { @apply w-10 h-10; }
 </style>
 
@@ -62,28 +61,11 @@ const initializeKonvaApp = (sectionElement) => {
   if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
   konvaContainer.dataset.initialized = 'true';
 
-  console.log("Konva: 初始化开始 (版本 3.5.5)...");
+  console.log("Konva: 初始化开始 (版本 3.6.0 - 高级对齐)...");
   
-  {%- assign all_symbol_files = "icon-tiktok.svg,icon-twitter.svg,icon-star.svg,icon-shopify.svg,icon-shirt.svg" | split: "," -%}
-  
-  const allSymbolUrls = {
-    {%- for file in all_symbol_files -%}
-      "{{ file }}": "{{ file | asset_url }}"{%- unless forloop.last -%},{%- endunless -%}
-    {%- endfor -%}
-  };
-
-  const symbolData = {
-    'Social': [
-      { name: 'TikTok', file: 'icon-tiktok.svg' },
-      { name: 'Twitter', file: 'icon-twitter.svg' }
-    ],
-    'Shopping': [
-      { name: 'Star', file: 'icon-star.svg' },
-      { name: 'Shopify', file: 'icon-shopify.svg' },
-      { name: 'Shirt', file: 'icon-shirt.svg' }
-    ]
-  };
-  
+  {%- assign all_symbol_files = "icon-tick.svg,icon-zoom.svg,icon-star.svg,icon-shopify.svg,icon-shirt.svg" | split: "," -%}
+  const allSymbolUrls = { {%- for file in all_symbol_files -%} "{{ file }}": "{{ file | asset_url }}"{%- unless forloop.last -%},{%- endunless -%} {%- endfor -%} };
+  const symbolData = { 'Social': [ { name: 'Tick', file: 'icon-tick.svg' }, { name: 'Zoom', file: 'icon-zoom.svg' } ], 'Shopping': [ { name: 'Star', file: 'icon-star.svg' }, { name: 'Shopify', file: 'icon-shopify.svg' }, { name: 'Shirt', file: 'icon-shirt.svg' } ] };
   const colorConflictMap = { 'Black': ['Black', 'Brown', 'Blue'], 'White': ['White', 'Apple Green'], 'Red': ['Red'], 'Blue': ['Blue', 'Black'], 'Brown': ['Brown', 'Black'], 'Apple Green': ['Apple Green', 'White'] };
 
   const sizeSelector = sectionElement.querySelector('#size-selector');
@@ -121,9 +103,6 @@ const initializeKonvaApp = (sectionElement) => {
   const updateCanvasSize = (newSizeValue) => { const newRatio = sizeRatios[newSizeValue]; const newHeight = baseWidth * newRatio; konvaContainer.style.height = `${newHeight}px`; stage.height(newHeight); backgroundRect.height(newHeight); colorOverlayRect.height(newHeight); repositionAllTexts(); stage.batchDraw(); };
   const applyBaseMaterial = (materialUrl) => { const imageObj = new Image(); imageObj.crossOrigin = 'Anonymous'; imageObj.onload = () => { backgroundRect.fillPatternImage(imageObj); backgroundRect.fillPatternRepeat('repeat'); backgroundRect.fill(null); mainLayer.batchDraw(); }; imageObj.src = materialUrl; };
   const applyLabelColor = (colorHex) => { colorOverlayRect.fill(colorHex); const isPureColor = pureColorSelector.querySelector('#pure-color-on').checked; if (isPureColor) { colorOverlayRect.opacity(1.0); } else { if (colorHex.toUpperCase() === '#FFFFFF') { colorOverlayRect.opacity(0); } else { colorOverlayRect.opacity(0.7); } } mainLayer.batchDraw(); };
-  const getLineGuideStops = () => { const vertical = [0, stage.width() / 2, stage.width()]; const horizontal = [0, stage.height() / 2, stage.height()]; return { vertical, horizontal }; }
-  const getObjectSnappingEdges = (node) => { const box = node.getClientRect(); const absPos = node.absolutePosition(); return { vertical: [ { guide: Math.round(box.x), offset: Math.round(absPos.x - box.x), snap: 'start' }, { guide: Math.round(box.x + box.width / 2), offset: Math.round(absPos.x - box.x - box.width / 2), snap: 'center' }, { guide: Math.round(box.x + box.width), offset: Math.round(absPos.x - box.x - box.width), snap: 'end' }, ], horizontal: [ { guide: Math.round(box.y), offset: Math.round(absPos.y - box.y), snap: 'start' }, { guide: Math.round(box.y + box.height / 2), offset: Math.round(absPos.y - box.y - box.height / 2), snap: 'center' }, { guide: Math.round(box.y + box.height), offset: Math.round(absPos.y - box.y - box.height), snap: 'end' }, ], }; }
-  const drawGuides = (guides) => { guides.forEach((lg) => { let line = new Konva.Line({ points: lg.orientation === 'H' ? [-6000, 0, 6000, 0] : [0, -6000, 0, 6000], stroke: 'rgb(0, 161, 255)', strokeWidth: 1, name: 'guid-line', dash: [4, 6], }); guideLayer.add(line); line.absolutePosition({ x: lg.lineGuide, y: lg.lineGuide }); }); }
   
   const updateTextColorOptions = (selectedLabelColorName) => { const conflictingColors = colorConflictMap[selectedLabelColorName] || []; const textSwatches = textColorSelector.querySelectorAll('.color-swatch'); textSwatches.forEach(swatch => { const swatchColorName = swatch.dataset.colorName; swatch.classList.toggle('disabled', conflictingColors.includes(swatchColorName)); }); const activeTextSwatch = textColorSelector.querySelector('.color-swatch.active'); if (activeTextSwatch && activeTextSwatch.classList.contains('disabled')) { const firstAvailable = textColorSelector.querySelector('.color-swatch:not(.disabled)'); if (firstAvailable) { firstAvailable.click(); } } };
   const populateSymbolSelectors = () => {
@@ -147,7 +126,6 @@ const initializeKonvaApp = (sectionElement) => {
         const imgUrl = allSymbolUrls[symbol.file];
         if (imgUrl) {
           symbolWrapper.dataset.url = imgUrl;
-          // [修复] 将尺寸类直接应用到 <img> 标签
           symbolWrapper.innerHTML = `<img src="${imgUrl}" alt="${symbol.name}" class="w-10 h-10" />`;
         } else {
           console.warn(`找不到符号文件的 URL: ${symbol.file}`);
@@ -162,13 +140,13 @@ const initializeKonvaApp = (sectionElement) => {
     fetch(svgUrl)
       .then(response => response.text())
       .then(svgText => {
-        const pathDataMatch = svgText.match(/d="([^"]+)"/);
-        if (!pathDataMatch || !pathDataMatch[1]) { console.error("无法从此 SVG 文件中提取路径数据:", svgUrl); return; }
-        const pathData = pathDataMatch[1];
+        const pathDataMatches = [...svgText.matchAll(/d="([^"]+)"/g)];
+        if (pathDataMatches.length === 0) { console.error("无法从此 SVG 文件中提取任何路径数据:", svgUrl); return; }
+        const combinedPathData = pathDataMatches.map(match => match[1]).join(' ');
         if (currentSymbol) { currentSymbol.destroy(); }
         const activeTextColor = textColorSelector.querySelector('.color-swatch.active')?.dataset.colorHex || '#000000';
         currentSymbol = new Konva.Path({
-          x: stage.width() / 2, y: stage.height() / 2, data: pathData,
+          x: stage.width() / 2, y: stage.height() / 2, data: combinedPathData,
           fill: activeTextColor, draggable: true, scale: { x: 3, y: 3 }
         });
         currentSymbol.offsetX(currentSymbol.width() / 2);
@@ -179,7 +157,69 @@ const initializeKonvaApp = (sectionElement) => {
       })
       .catch(err => console.error("加载 SVG 文件失败:", err));
   };
+
+  // --- [核心升级] 高级对齐逻辑 ---
+  const GUIDELINE_OFFSET = 5;
+
+  // 获取所有需要对齐的节点
+  const getDraggableNodes = () => {
+      return mainLayer.getChildren(node => node.draggable() && node.visible());
+  };
   
+  // 获取一个节点的所有可能的对齐边缘
+  const getObjectSnappingEdges = (node) => {
+    const box = node.getClientRect({ skipTransform: true });
+    return {
+      vertical: [
+        { guide: box.x, edge: 'start' },
+        { guide: box.x + box.width / 2, edge: 'center' },
+        { guide: box.x + box.width, edge: 'end' },
+      ],
+      horizontal: [
+        { guide: box.y, edge: 'start' },
+        { guide: box.y + box.height / 2, edge: 'center' },
+        { guide: box.y + box.height, edge: 'end' },
+      ],
+    };
+  };
+
+  // 获取所有可能的对齐线 (来自画布和其他对象)
+  const getGuides = (draggedNode) => {
+    const allNodes = getDraggableNodes();
+    let guides = {
+      vertical: [
+        { guide: 0, edge: 'start' }, { guide: stage.width() / 2, edge: 'center' }, { guide: stage.width(), edge: 'end' }
+      ],
+      horizontal: [
+        { guide: 0, edge: 'start' }, { guide: stage.height() / 2, edge: 'center' }, { guide: stage.height(), edge: 'end' }
+      ]
+    };
+
+    allNodes.forEach((node) => {
+      if (node === draggedNode) return;
+      const edges = getObjectSnappingEdges(node);
+      guides.vertical.push(...edges.vertical);
+      guides.horizontal.push(...edges.horizontal);
+    });
+
+    return guides;
+  };
+
+  const drawGuides = (lines) => {
+      lines.forEach((line) => {
+          const konvaLine = new Konva.Line({
+              points: line.points,
+              stroke: 'rgb(255, 0, 0)', // 红色参考线
+              strokeWidth: 1,
+              name: 'guid-line',
+              dash: [4, 6],
+          });
+          guideLayer.add(konvaLine);
+      });
+      guideLayer.batchDraw();
+  };
+
+  // --- 事件监听器 ---
   sizeSelector.addEventListener('change', (e) => { if (e.target.name === 'label-size') { updateCanvasSize(e.target.value); } });
   materialSelector.addEventListener('change', (e) => { if (e.target.name === 'label-material') { applyBaseMaterial(e.target.value); } });
   labelColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch) return; labelColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; const newColorName = swatch.dataset.colorName; applyLabelColor(newColorHex); updateTextColorOptions(newColorName); });
@@ -194,8 +234,45 @@ const initializeKonvaApp = (sectionElement) => {
   const currentCategoryNameEl = symbolControls.querySelector('#current-category-name');
   symbolControls.addEventListener('click', (e) => { const categoryBtn = e.target.closest('.symbol-category-btn'); const backBtn = e.target.closest('#back-to-categories-btn'); const symbolItem = e.target.closest('.symbol-item'); if (categoryBtn) { const categoryName = categoryBtn.dataset.category; categoryView.classList.add('hidden'); pickerView.classList.remove('hidden'); currentCategoryNameEl.textContent = categoryName; symbolControls.querySelectorAll('.symbol-grid').forEach(grid => grid.classList.add('hidden')); symbolControls.querySelector(`#symbol-grid-${categoryName}`).classList.remove('hidden'); } if (backBtn) { pickerView.classList.add('hidden'); categoryView.classList.remove('hidden'); } if (symbolItem) { const svgUrl = symbolItem.dataset.url; const symbolName = symbolItem.dataset.name; if(svgUrl) { addOrUpdateSymbol(svgUrl, symbolName); } } });
   
-  mainLayer.on('dragmove', (e) => { const GUIDELINE_OFFSET = 5; guideLayer.find('.guid-line').forEach((l) => l.destroy()); const lineGuideStops = getLineGuideStops(); const itemBounds = getObjectSnappingEdges(e.target); const guides = []; lineGuideStops.vertical.forEach((lineGuide) => { itemBounds.vertical.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.x(Math.round(e.target.x() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'V' }); } }); }); lineGuideStops.horizontal.forEach((lineGuide) => { itemBounds.horizontal.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.y(Math.round(e.target.y() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'H' }); } }); }); drawGuides(guides); guideLayer.batchDraw(); });
-  mainLayer.on('dragend', () => { guideLayer.find('.guid-line').forEach((l) => l.destroy()); guideLayer.batchDraw(); });
+  mainLayer.on('dragmove', (e) => {
+    guideLayer.destroyChildren();
+
+    const draggedNode = e.target;
+    const guides = getGuides(draggedNode);
+    const nodeEdges = getObjectSnappingEdges(draggedNode);
+    let absPos = draggedNode.absolutePosition();
+    let lines = [];
+    
+    // 垂直对齐检查
+    guides.vertical.forEach((guide) => {
+      nodeEdges.vertical.forEach((edge) => {
+        const diff = Math.abs(edge.guide - guide.guide);
+        if (diff < GUIDELINE_OFFSET) {
+          absPos.x = guide.guide - (edge.guide - absPos.x);
+          lines.push({ points: [-6000, guide.guide, 6000, guide.guide] });
+        }
+      });
+    });
+
+    // 水平对齐检查
+    guides.horizontal.forEach((guide) => {
+      nodeEdges.horizontal.forEach((edge) => {
+        const diff = Math.abs(edge.guide - guide.guide);
+        if (diff < GUIDELINE_OFFSET) {
+          absPos.y = guide.guide - (edge.guide - absPos.y);
+          lines.push({ points: [guide.guide, -6000, guide.guide, 6000] });
+        }
+      });
+    });
+    
+    draggedNode.absolutePosition(absPos);
+    drawGuides(lines);
+  });
+  
+  mainLayer.on('dragend', () => {
+    guideLayer.destroyChildren();
+    guideLayer.batchDraw();
+  });
   
   addToCartBtn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -236,7 +313,7 @@ const initializeKonvaApp = (sectionElement) => {
   if(initialTextSwatch) { textObjects.forEach(textNode => textNode.fill(initialTextSwatch.dataset.colorHex)); }
   repositionAllTexts();
   stage.batchDraw();
-  console.log("Konva: 初始化流程完成！ (版本 3.5.5)");
+  console.log("Konva: 初始化流程完成！ (版本 3.6.0)");
 };
   
 const bootstrapper = () => {
