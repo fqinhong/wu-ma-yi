@@ -1,9 +1,12 @@
 {% comment %}
-  版本 3.5.6: 外部 SVG 功能 - 多路径支持修复版
-  - 修复: 解决了只能渲染单路径 SVG 的问题。
-  - 核心改动: 更新了 addOrUpdateSymbol 函数中的正则表达式，使用 matchAll() 来查找并提取一个 SVG 文件中
-    【所有】的 <path> 数据，并将它们合并成一个单一的复合路径。
-  - 承诺: 本文件包含截至目前所有功能的完整、无省略、可直接运行的代码。
+  版本 3.7.0: 对象选择与变换 (Figma-like)
+  - 核心升级: 引入了 Konva.Transformer，实现了专业级的对象选择、拖动和缩放功能。
+  - 新增: 点击画布上的对象 (文本或符号) 会出现蓝色变换框。
+  - 新增: 用户可以通过拖动变换框的角点来缩放对象。
+  - 更新: 点击画布空白区域可以取消选择。
+  - 更新: 添加新符号时，会自动选中该符号。
+  - 更新: "添加到购物车"时会自动隐藏变换框，确保截图干净。
+  - 废弃: 移除了之前失败的高级对齐逻辑，回归稳定版本。
 {% endcomment %}
 
 <!-- 字体加载 -->
@@ -28,376 +31,25 @@
   <div class="customizer-container flex flex-wrap gap-8">
     <div class="customizer-controls w-full md:w-1/3">
       <h3 class="text-xl font-bold mb-6">设计你的标签</h3>
-
-      <div class="control-group mb-5">
-        <label class="block text-sm font-medium text-gray-700 mb-2">1. 选择标签尺寸:</label>
-        <div id="size-selector" class="flex items-center gap-4">
-          <div>
-            <input type="radio" id="size-60x15" name="label-size" value="60x15" class="hidden peer" checked
-            ><label
-              for="size-60x15"
-              class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"
-            >
-              <div class="block">
-                <div class="w-full text-sm font-semibold">2.36" x 0.59"</div>
-                <div class="w-full text-xs">60 x 15 mm</div>
-              </div>
-            </label>
-          </div>
-          <div>
-            <input type="radio" id="size-60x20" name="label-size" value="60x20" class="hidden peer"
-            ><label
-              for="size-60x20"
-              class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"
-            >
-              <div class="block">
-                <div class="w-full text-sm font-semibold">2.36" x 0.79"</div>
-                <div class="w-full text-xs">60 x 20 mm</div>
-              </div>
-            </label>
-          </div>
-        </div>
-      </div>
-      <div class="control-group mb-5">
-        <label class="block text-sm font-medium text-gray-700 mb-2">选择标签材质:</label>
-        <div id="material-selector" class="flex items-center gap-4">
-          <div>
-            <input
-              type="radio"
-              id="material-fabric"
-              name="label-material"
-              value="{{ 'fabric.jpg' | asset_url }}"
-              class="hidden peer"
-              checked
-
-            ><label
-              for="material-fabric"
-              class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"
-            >
-              <div class="block">
-                <div class="w-full text-sm font-semibold">布料</div>
-                <div class="w-full text-xs">Fabric</div>
-              </div>
-            </label>
-          </div>
-          <div>
-            <input
-              type="radio"
-              id="material-leather"
-              name="label-material"
-              value="{{ 'leather.jpg' | asset_url }}"
-              class="hidden peer"
-
-            ><label
-              for="material-leather"
-              class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"
-            >
-              <div class="block">
-                <div class="w-full text-sm font-semibold">皮革</div>
-                <div class="w-full text-xs">Leather</div>
-              </div>
-            </label>
-          </div>
-        </div>
-      </div>
-      <div class="control-group mb-5">
-        <label class="block text-sm font-medium text-gray-700 mb-2">2. 选择固定方式:</label>
-        <div id="fixing-type-selector" class="flex items-center gap-4">
-          <div>
-            <input type="radio" id="sew-on" name="fixing-type" value="Sew On" class="hidden peer" checked
-            ><label
-              for="sew-on"
-              class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"
-            >
-              <div class="block">
-                <div class="w-full text-sm font-semibold">缝纫</div>
-                <div class="w-full text-xs">Sew On</div>
-              </div>
-            </label>
-          </div>
-          <div>
-            <input type="radio" id="iron-on" name="fixing-type" value="Iron On" class="hidden peer"
-            ><label
-              for="iron-on"
-              class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"
-            >
-              <div class="block">
-                <div class="w-full text-sm font-semibold">熨烫</div>
-                <div class="w-full text-xs">Iron On</div>
-              </div>
-            </label>
-          </div>
-        </div>
-      </div>
-      <div class="control-group mb-5">
-        <label class="block text-sm font-medium text-gray-700 mb-2">3. 选择标签颜色:</label>
-        <div id="label-color-selector" class="flex flex-wrap gap-2">
-          <div
-            title="White"
-            data-color-name="White"
-            data-color-hex="#FFFFFF"
-            class="color-swatch active w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "white.jpg" | asset_url }}')"
-          > </div>
-          <div
-            title="Apple Green"
-            data-color-name="Apple Green"
-            data-color-hex="#77B800"
-            class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "applegreen.jpg" | asset_url }}')"
-          > </div>
-          <div
-            title="Black"
-            data-color-name="Black"
-            data-color-hex="#000000"
-            class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "black.jpg" | asset_url }}')"
-          > </div>
-          <div
-            title="Blue"
-            data-color-name="Blue"
-            data-color-hex="#0000FF"
-            class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "blue.jpg" | asset_url }}')"
-          > </div>
-          <div
-            title="Brown"
-            data-color-name="Brown"
-            data-color-hex="#A52A2A"
-            class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "brown.jpg" | asset_url }}')"
-          > </div>
-          <div
-            title="Red"
-            data-color-name="Red"
-            data-color-hex="#FF0000"
-            class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "red.jpg" | asset_url }}')"
-          > </div>
-        </div>
-      </div>
-      <div class="control-group mb-5">
-        <label class="block text-sm font-medium text-gray-700 mb-2">4. 选择色彩模式:</label>
-        <div id="pure-color-selector" class="flex items-center gap-4">
-          <div>
-            <input type="radio" id="pure-color-standard" name="pure-color" value="Standard" class="hidden peer" checked
-            ><label
-              for="pure-color-standard"
-              class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"
-            >
-              <div class="block">
-                <div class="w-full text-sm font-semibold">标准</div>
-                <div class="w-full text-xs">Standard (show texture)</div>
-              </div>
-            </label>
-          </div>
-          <div>
-            <input type="radio" id="pure-color-on" name="pure-color" value="Pure Color" class="hidden peer"
-            ><label
-              for="pure-color-on"
-              class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"
-            >
-              <div class="block">
-                <div class="w-full text-sm font-semibold">纯色</div>
-                <div class="w-full text-xs">With Pure Color</div>
-              </div>
-            </label>
-          </div>
-        </div>
-      </div>
-      <div class="control-group mb-5">
-        <label class="block text-sm font-medium text-gray-700 mb-2">5. 定制你的文字:</label>
-        <div id="text-rows-container" class="space-y-4">
-          <div class="text-row-item border p-3 rounded-md">
-            <label for="text-input-1" class="block text-xs font-medium text-gray-500">Text Row 1</label
-            ><input
-              type="text"
-              id="text-input-1"
-              data-row-index="0"
-              placeholder="第一行文字"
-              class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"
-
-            ><label for="font-selector-1" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label
-            ><select
-              id="font-selector-1"
-              data-row-index="0"
-              class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"
-            >
-              <option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option>
-              <option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option>
-              <option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option>
-              <option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option>
-              <option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option>
-              <option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option>
-              <option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">
-                Cinzel Decorative
-              </option>
-              <option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option>
-              <option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option>
-              <option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option>
-              <option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option>
-              <option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option>
-              <option value="Arial" style="font-family: Arial, sans-serif;">Arial</option>
-              <option value="Georgia" style="font-family: Georgia, serif;">Georgia</option>
-            </select>
-          </div>
-          <div class="text-row-item border p-3 rounded-md">
-            <label for="text-input-2" class="block text-xs font-medium text-gray-500">Text Row 2</label
-            ><input
-              type="text"
-              id="text-input-2"
-              data-row-index="1"
-              placeholder="第二行文字"
-              class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"
-
-            ><label for="font-selector-2" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label
-            ><select
-              id="font-selector-2"
-              data-row-index="1"
-              class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"
-            >
-              <option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option>
-              <option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option>
-              <option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option>
-              <option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option>
-              <option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option>
-              <option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option>
-              <option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">
-                Cinzel Decorative
-              </option>
-              <option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option>
-              <option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option>
-              <option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option>
-              <option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option>
-              <option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option>
-              <option value="Arial" style="font-family: Arial, sans-serif;">Arial</option>
-              <option value="Georgia" style="font-family: Georgia, serif;">Georgia</option>
-            </select>
-          </div>
-          <div class="text-row-item border p-3 rounded-md">
-            <label for="text-input-3" class="block text-xs font-medium text-gray-500">Text Row 3</label
-            ><input
-              type="text"
-              id="text-input-3"
-              data-row-index="2"
-              placeholder="第三行文字"
-              class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"
-
-            ><label for="font-selector-3" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label
-            ><select
-              id="font-selector-3"
-              data-row-index="2"
-              class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"
-            >
-              <option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option>
-              <option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option>
-              <option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option>
-              <option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option>
-              <option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option>
-              <option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option>
-              <option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">
-                Cinzel Decorative
-              </option>
-              <option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option>
-              <option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option>
-              <option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option>
-              <option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option>
-              <option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option>
-              <option value="Arial" style="font-family: Arial, sans-serif;">Arial</option>
-              <option value="Georgia" style="font-family: Georgia, serif;">Georgia</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div class="control-group mb-5">
-        <label class="block text-sm font-medium text-gray-700 mb-2">6. 选择字体颜色:</label>
-        <div id="text-color-selector" class="flex flex-wrap gap-2">
-          <div
-            title="White"
-            data-color-name="White"
-            data-color-hex="#FFFFFF"
-            class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "white.jpg" | asset_url }}')"
-          > </div>
-          <div
-            title="Apple Green"
-            data-color-name="Apple Green"
-            data-color-hex="#77B800"
-            class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "applegreen.jpg" | asset_url }}')"
-          > </div>
-          <div
-            title="Black"
-            data-color-name="Black"
-            data-color-hex="#000000"
-            class="color-swatch active w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "black.jpg" | asset_url }}')"
-          > </div>
-          <div
-            title="Blue"
-            data-color-name="Blue"
-            data-color-hex="#0000FF"
-            class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "blue.jpg" | asset_url }}')"
-          > </div>
-          <div
-            title="Brown"
-            data-color-name="Brown"
-            data-color-hex="#A52A2A"
-            class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "brown.jpg" | asset_url }}')"
-          > </div>
-          <div
-            title="Red"
-            data-color-name="Red"
-            data-color-hex="#FF0000"
-            class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75"
-            style="background-image: url('{{ "red.jpg" | asset_url }}')"
-          > </div>
-        </div>
-      </div>
-      <div class="control-group mb-5">
-        <label for="font-size-input" class="block text-sm font-medium text-gray-700 mb-1"
-          >字体大小 (应用于所有行):</label
-        ><input
-          type="number"
-          id="font-size-input"
-          value="20"
-          min="8"
-          max="72"
-          class="w-full p-2 border border-gray-300 rounded-md shadow-sm"
-        >
-      </div>
-
+      
+      <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">1. 选择标签尺寸:</label><div id="size-selector" class="flex items-center gap-4"><div><input type="radio" id="size-60x15" name="label-size" value="60x15" class="hidden peer" checked><label for="size-60x15" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">2.36" x 0.59"</div><div class="w-full text-xs">60 x 15 mm</div></div></label></div><div><input type="radio" id="size-60x20" name="label-size" value="60x20" class="hidden peer"><label for="size-60x20" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">2.36" x 0.79"</div><div class="w-full text-xs">60 x 20 mm</div></div></label></div></div></div>
+      <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">选择标签材质:</label><div id="material-selector" class="flex items-center gap-4"><div><input type="radio" id="material-fabric" name="label-material" value="{{ 'fabric.jpg' | asset_url }}" class="hidden peer" checked><label for="material-fabric" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">布料</div><div class="w-full text-xs">Fabric</div></div></label></div><div><input type="radio" id="material-leather" name="label-material" value="{{ 'leather.jpg' | asset_url }}" class="hidden peer"><label for="material-leather" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">皮革</div><div class="w-full text-xs">Leather</div></div></label></div></div></div>
+      <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">2. 选择固定方式:</label><div id="fixing-type-selector" class="flex items-center gap-4"><div><input type="radio" id="sew-on" name="fixing-type" value="Sew On" class="hidden peer" checked><label for="sew-on" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">缝纫</div><div class="w-full text-xs">Sew On</div></div></label></div><div><input type="radio" id="iron-on" name="fixing-type" value="Iron On" class="hidden peer"><label for="iron-on" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">熨烫</div><div class="w-full text-xs">Iron On</div></div></label></div></div></div>
+      <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">3. 选择标签颜色:</label><div id="label-color-selector" class="flex flex-wrap gap-2"><div title="White" data-color-name="White" data-color-hex="#FFFFFF" class="color-swatch active w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "white.jpg" | asset_url }}')"> </div><div title="Apple Green" data-color-name="Apple Green" data-color-hex="#77B800" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "applegreen.jpg" | asset_url }}')"> </div><div title="Black" data-color-name="Black" data-color-hex="#000000" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "black.jpg" | asset_url }}')"> </div><div title="Blue" data-color-name="Blue" data-color-hex="#0000FF" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "blue.jpg" | asset_url }}')"> </div><div title="Brown" data-color-name="Brown" data-color-hex="#A52A2A" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "brown.jpg" | asset_url }}')"> </div><div title="Red" data-color-name="Red" data-color-hex="#FF0000" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "red.jpg" | asset_url }}')"> </div></div></div>
+      <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">4. 选择色彩模式:</label><div id="pure-color-selector" class="flex items-center gap-4"><div><input type="radio" id="pure-color-standard" name="pure-color" value="Standard" class="hidden peer" checked><label for="pure-color-standard" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">标准</div><div class="w-full text-xs">Standard (show texture)</div></div></label></div><div><input type="radio" id="pure-color-on" name="pure-color" value="Pure Color" class="hidden peer"><label for="pure-color-on" class="inline-flex items-center justify-between w-full p-3 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer peer-checked:border-indigo-600 peer-checked:text-indigo-600 hover:text-gray-600 hover:bg-gray-100"><div class="block"><div class="w-full text-sm font-semibold">纯色</div><div class="w-full text-xs">With Pure Color</div></div></label></div></div></div>
+      <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">5. 定制你的文字:</label><div id="text-rows-container" class="space-y-4"><div class="text-row-item border p-3 rounded-md"><label for="text-input-1" class="block text-xs font-medium text-gray-500">Text Row 1</label><input type="text" id="text-input-1" data-row-index="0" placeholder="第一行文字" class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"><label for="font-selector-1" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label><select id="font-selector-1" data-row-index="0" class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"><option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option><option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option><option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option><option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option><option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option><option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option><option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">Cinzel Decorative</option><option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option><option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option><option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option><option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option><option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option><option value="Arial" style="font-family: Arial, sans-serif;">Arial</option><option value="Georgia" style="font-family: Georgia, serif;">Georgia</option></select></div><div class="text-row-item border p-3 rounded-md"><label for="text-input-2" class="block text-xs font-medium text-gray-500">Text Row 2</label><input type="text" id="text-input-2" data-row-index="1" placeholder="第二行文字" class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"><label for="font-selector-2" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label><select id="font-selector-2" data-row-index="1" class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"><option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option><option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option><option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option><option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option><option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option><option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option><option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">Cinzel Decorative</option><option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option><option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option><option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option><option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option><option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option><option value="Arial" style="font-family: Arial, sans-serif;">Arial</option><option value="Georgia" style="font-family: Georgia, serif;">Georgia</option></select></div><div class="text-row-item border p-3 rounded-md"><label for="text-input-3" class="block text-xs font-medium text-gray-500">Text Row 3</label><input type="text" id="text-input-3" data-row-index="2" placeholder="第三行文字" class="text-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-2"><label for="font-selector-3" class="block text-xs font-medium text-gray-500 mt-2">Choose Font</label><select id="font-selector-3" data-row-index="2" class="font-selector w-full p-2 border border-gray-300 rounded-md shadow-sm"><option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option><option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option><option value="Lobster" style="font-family: 'Lobster', cursive;">Lobster</option><option value="Pacifico" style="font-family: 'Pacifico', cursive;">Pacifico</option><option value="Sacramento" style="font-family: 'Sacramento', cursive;">Sacramento</option><option value="Great Vibes" style="font-family: 'Great Vibes', cursive;">Great Vibes</option><option value="Cinzel Decorative" style="font-family: 'Cinzel Decorative', cursive;">Cinzel Decorative</option><option value="Comic Neue" style="font-family: 'Comic Neue', cursive;">Comic Neue</option><option value="Bangers" style="font-family: 'Bangers', cursive;">Bangers</option><option value="Fredoka One" style="font-family: 'Fredoka One', cursive;">Fredoka One</option><option value="Luckiest Guy" style="font-family: 'Luckiest Guy', cursive;">Luckiest Guy</option><option value="Press Start 2P" style="font-family: 'Press Start 2P', cursive;">Press Start 2P</option><option value="Arial" style="font-family: Arial, sans-serif;">Arial</option><option value="Georgia" style="font-family: Georgia, serif;">Georgia</option></select></div></div></div>
+      <div class="control-group mb-5"><label class="block text-sm font-medium text-gray-700 mb-2">6. 选择字体颜色:</label><div id="text-color-selector" class="flex flex-wrap gap-2"><div title="White" data-color-name="White" data-color-hex="#FFFFFF" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "white.jpg" | asset_url }}')"> </div><div title="Apple Green" data-color-name="Apple Green" data-color-hex="#77B800" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "applegreen.jpg" | asset_url }}')"> </div><div title="Black" data-color-name="Black" data-color-hex="#000000" class="color-swatch active w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "black.jpg" | asset_url }}')"> </div><div title="Blue" data-color-name="Blue" data-color-hex="#0000FF" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "blue.jpg" | asset_url }}')"> </div><div title="Brown" data-color-name="Brown" data-color-hex="#A52A2A" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "brown.jpg" | asset_url }}')"> </div><div title="Red" data-color-name="Red" data-color-hex="#FF0000" class="color-swatch w-9 h-9 rounded-full cursor-pointer bg-cover bg-center transition hover:opacity-75" style="background-image: url('{{ "red.jpg" | asset_url }}')"> </div></div></div>
+      <div class="control-group mb-5"><label for="font-size-input" class="block text-sm font-medium text-gray-700 mb-1">字体大小 (应用于所有行):</label><input type="number" id="font-size-input" value="20" min="8" max="72" class="w-full p-2 border border-gray-300 rounded-md shadow-sm"></div>
+      
       <div class="control-group mb-5">
         <label class="block text-sm font-medium text-gray-700 mb-2">7. 选择一个符号 (可选):</label>
         <div id="symbol-controls" class="border p-3 rounded-md">
-          <div id="symbol-category-view">
-            <p class="text-xs text-gray-500 mb-2">选择一个分类:</p>
-            <div id="symbol-category-grid" class="flex flex-wrap gap-2"></div>
-          </div>
-          <div id="symbol-picker-view" class="hidden">
-            <div class="flex items-center justify-between mb-2">
-              <button
-                type="button"
-                id="back-to-categories-btn"
-                class="text-sm font-medium text-indigo-600 hover:text-indigo-800"
-              >
-                ← 返回分类
-              </button>
-              <p id="current-category-name" class="text-xs text-gray-500 font-bold"></p>
-            </div>
-            <div id="symbol-grid-container" class="flex flex-wrap gap-2"></div>
-          </div>
+          <div id="symbol-category-view"><p class="text-xs text-gray-500 mb-2">选择一个分类:</p><div id="symbol-category-grid" class="flex flex-wrap gap-2"></div></div>
+          <div id="symbol-picker-view" class="hidden"><div class="flex items-center justify-between mb-2"><button type="button" id="back-to-categories-btn" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">← 返回分类</button><p id="current-category-name" class="text-xs text-gray-500 font-bold"></p></div><div id="symbol-grid-container" class="flex flex-wrap gap-2"></div></div>
         </div>
       </div>
 
-      <button
-        id="add-to-cart-btn"
-        class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        添加到购物车
-      </button>
+      <button id="add-to-cart-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">添加到购物车</button>
     </div>
     <div class="canvas-wrapper w-full md:flex-1 bg-gray-50 border border-gray-200 rounded-md">
       <div id="konva-container"></div>
@@ -411,7 +63,7 @@ const initializeKonvaApp = (sectionElement) => {
   if (!konvaContainer || konvaContainer.dataset.initialized === 'true') return;
   konvaContainer.dataset.initialized = 'true';
 
-  console.log("Konva: 初始化开始 (版本 3.5.6)...");
+  console.log("Konva: 初始化开始 (版本 3.7.0 - 对象变换)...");
   
   {%- assign all_symbol_files = "icon-tick.svg,icon-zoom.svg,icon-star.svg,icon-shopify.svg,icon-shirt.svg" | split: "," -%}
   const allSymbolUrls = { {%- for file in all_symbol_files -%} "{{ file }}": "{{ file | asset_url }}"{%- unless forloop.last -%},{%- endunless -%} {%- endfor -%} };
@@ -438,8 +90,25 @@ const initializeKonvaApp = (sectionElement) => {
   const stage = new Konva.Stage({ container: konvaContainer, width: baseWidth, height: initialHeight });
   const mainLayer = new Konva.Layer();
   stage.add(mainLayer);
-  const guideLayer = new Konva.Layer();
-  stage.add(guideLayer);
+  
+  // [核心升级] 1. 创建 Transformer 实例
+  const transformer = new Konva.Transformer({
+    borderStroke: '#3B82F6', // Tailwind blue-500
+    anchorStroke: '#3B82F6',
+    anchorFill: '#EFF6FF', // Tailwind blue-100
+    anchorSize: 10,
+    rotateEnabled: false, // 暂时禁用旋转
+    keepRatio: true, // 保持宽高比缩放
+    // 限制最小缩放尺寸
+    boundBoxFunc: (oldBox, newBox) => {
+      if (newBox.width < 10 || newBox.height < 10) {
+        return oldBox;
+      }
+      return newBox;
+    },
+  });
+  mainLayer.add(transformer);
+
   const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: baseWidth, height: initialHeight, fill: '#f0f0f0' });
   mainLayer.add(backgroundRect);
   const colorOverlayRect = new Konva.Rect({ x: 0, y: 0, width: baseWidth, height: initialHeight, fill: '#FFFFFF', opacity: 0, name: 'color-overlay' });
@@ -449,132 +118,157 @@ const initializeKonvaApp = (sectionElement) => {
   for (let i = 0; i < NUM_TEXT_ROWS; i++) { const textNode = new Konva.Text({ x: stage.width() / 2, y: 0, text: i === 0 ? '第一行文字' : '', fontSize: 20, fontFamily: 'Roboto', fill: '#000000', draggable: true, name: `text-line-${i}` }); textObjects.push(textNode); mainLayer.add(textNode); }
   let currentSymbol = null;
 
-  const repositionAllTexts = () => { const activeTexts = textObjects.filter(t => t.text()); if (activeTexts.length === 0) return; const totalHeight = activeTexts.reduce((sum, t) => sum + t.height(), 0); let startY = (stage.height() - totalHeight) / 2; textObjects.forEach(textNode => { textNode.x(stage.width() / 2); textNode.offsetX(textNode.width() / 2); if (textNode.text()) { textNode.y(startY); textNode.offsetY(0); startY += textNode.height(); } else { textNode.y(-1000); } }); mainLayer.batchDraw(); };
-  const updateCanvasSize = (newSizeValue) => { const newRatio = sizeRatios[newSizeValue]; const newHeight = baseWidth * newRatio; konvaContainer.style.height = `${newHeight}px`; stage.height(newHeight); backgroundRect.height(newHeight); colorOverlayRect.height(newHeight); repositionAllTexts(); stage.batchDraw(); };
-  const applyBaseMaterial = (materialUrl) => { const imageObj = new Image(); imageObj.crossOrigin = 'Anonymous'; imageObj.onload = () => { backgroundRect.fillPatternImage(imageObj); backgroundRect.fillPatternRepeat('repeat'); backgroundRect.fill(null); mainLayer.batchDraw(); }; imageObj.src = materialUrl; };
-  const applyLabelColor = (colorHex) => { colorOverlayRect.fill(colorHex); const isPureColor = pureColorSelector.querySelector('#pure-color-on').checked; if (isPureColor) { colorOverlayRect.opacity(1.0); } else { if (colorHex.toUpperCase() === '#FFFFFF') { colorOverlayRect.opacity(0); } else { colorOverlayRect.opacity(0.7); } } mainLayer.batchDraw(); };
-  const getLineGuideStops = () => { const vertical = [0, stage.width() / 2, stage.width()]; const horizontal = [0, stage.height() / 2, stage.height()]; return { vertical, horizontal }; }
-  const getObjectSnappingEdges = (node) => { const box = node.getClientRect(); const absPos = node.absolutePosition(); return { vertical: [ { guide: Math.round(box.x), offset: Math.round(absPos.x - box.x), snap: 'start' }, { guide: Math.round(box.x + box.width / 2), offset: Math.round(absPos.x - box.x - box.width / 2), snap: 'center' }, { guide: Math.round(box.x + box.width), offset: Math.round(absPos.x - box.x - box.width), snap: 'end' }, ], horizontal: [ { guide: Math.round(box.y), offset: Math.round(absPos.y - box.y), snap: 'start' }, { guide: Math.round(box.y + box.height / 2), offset: Math.round(absPos.y - box.y - box.height / 2), snap: 'center' }, { guide: Math.round(box.y + box.height), offset: Math.round(absPos.y - box.y - box.height), snap: 'end' }, ], }; }
-  const drawGuides = (guides) => { guides.forEach((lg) => { let line = new Konva.Line({ points: lg.orientation === 'H' ? [-6000, 0, 6000, 0] : [0, -6000, 0, 6000], stroke: 'rgb(0, 161, 255)', strokeWidth: 1, name: 'guid-line', dash: [4, 6], }); guideLayer.add(line); line.absolutePosition({ x: lg.lineGuide, y: lg.lineGuide }); }); }
+  const repositionAllTexts = () => { /* ... */ };
+  const updateCanvasSize = (newSizeValue) => { /* ... */ };
+  const applyBaseMaterial = (materialUrl) => { /* ... */ };
+  const applyLabelColor = (colorHex) => { /* ... */ };
+  const updateTextColorOptions = (selectedLabelColorName) => { /* ... */ };
+  const populateSymbolSelectors = () => { /* ... */ };
   
-  const updateTextColorOptions = (selectedLabelColorName) => { const conflictingColors = colorConflictMap[selectedLabelColorName] || []; const textSwatches = textColorSelector.querySelectorAll('.color-swatch'); textSwatches.forEach(swatch => { const swatchColorName = swatch.dataset.colorName; swatch.classList.toggle('disabled', conflictingColors.includes(swatchColorName)); }); const activeTextSwatch = textColorSelector.querySelector('.color-swatch.active'); if (activeTextSwatch && activeTextSwatch.classList.contains('disabled')) { const firstAvailable = textColorSelector.querySelector('.color-swatch:not(.disabled)'); if (firstAvailable) { firstAvailable.click(); } } };
-  const populateSymbolSelectors = () => {
-    const categoryGrid = symbolControls.querySelector('#symbol-category-grid');
-    const symbolGridContainer = symbolControls.querySelector('#symbol-grid-container');
-    for (const categoryName in symbolData) {
-      const categoryButton = document.createElement('button');
-      categoryButton.type = 'button';
-      categoryButton.className = 'symbol-category-btn p-2 border rounded-md text-sm w-full text-left hover:bg-gray-50';
-      categoryButton.textContent = categoryName;
-      categoryButton.dataset.category = categoryName;
-      categoryGrid.appendChild(categoryButton);
-      const grid = document.createElement('div');
-      grid.id = `symbol-grid-${categoryName}`;
-      grid.className = 'symbol-grid hidden flex flex-wrap gap-2';
-      symbolData[categoryName].forEach(symbol => {
-        const symbolWrapper = document.createElement('div');
-        symbolWrapper.className = 'symbol-item';
-        symbolWrapper.title = symbol.name;
-        symbolWrapper.dataset.name = symbol.name;
-        const imgUrl = allSymbolUrls[symbol.file];
-        if (imgUrl) {
-          symbolWrapper.dataset.url = imgUrl;
-          symbolWrapper.innerHTML = `<img src="${imgUrl}" alt="${symbol.name}" class="w-10 h-10" />`;
-        } else {
-          console.warn(`找不到符号文件的 URL: ${symbol.file}`);
-          symbolWrapper.innerHTML = `<span>?</span>`;
-        }
-        grid.appendChild(symbolWrapper);
-      });
-      symbolGridContainer.appendChild(grid);
-    }
-  };
   const addOrUpdateSymbol = (svgUrl, symbolName) => {
     fetch(svgUrl)
       .then(response => response.text())
       .then(svgText => {
-        // [核心修复] 使用 matchAll 和全局标志 /g 来查找所有路径
         const pathDataMatches = [...svgText.matchAll(/d="([^"]+)"/g)];
-        if (pathDataMatches.length === 0) {
-          console.error("无法从此 SVG 文件中提取任何路径数据:", svgUrl);
-          return;
-        }
-        // [核心修复] 将所有找到的路径数据合并成一个字符串
+        if (pathDataMatches.length === 0) { console.error("无法从此 SVG 文件中提取任何路径数据:", svgUrl); return; }
         const combinedPathData = pathDataMatches.map(match => match[1]).join(' ');
-        
-        if (currentSymbol) { currentSymbol.destroy(); }
+        if (currentSymbol) {
+          transformer.nodes([]); // 替换前先取消选中
+          currentSymbol.destroy();
+        }
         const activeTextColor = textColorSelector.querySelector('.color-swatch.active')?.dataset.colorHex || '#000000';
         currentSymbol = new Konva.Path({
-          x: stage.width() / 2, y: stage.height() / 2,
-          data: combinedPathData, // 使用合并后的路径数据
+          x: stage.width() / 2, y: stage.height() / 2, data: combinedPathData,
           fill: activeTextColor, draggable: true, scale: { x: 3, y: 3 }
         });
         currentSymbol.offsetX(currentSymbol.width() / 2);
         currentSymbol.offsetY(currentSymbol.height() / 2);
         currentSymbol.setAttr('symbolName', symbolName);
         mainLayer.add(currentSymbol);
+        
+        // [核心升级] 2. 添加新符号后自动选中
+        transformer.nodes([currentSymbol]);
+        
         mainLayer.batchDraw();
       })
       .catch(err => console.error("加载 SVG 文件失败:", err));
   };
-  
-  sizeSelector.addEventListener('change', (e) => { if (e.target.name === 'label-size') { updateCanvasSize(e.target.value); } });
-  materialSelector.addEventListener('change', (e) => { if (e.target.name === 'label-material') { applyBaseMaterial(e.target.value); } });
-  labelColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch) return; labelColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; const newColorName = swatch.dataset.colorName; applyLabelColor(newColorHex); updateTextColorOptions(newColorName); });
-  pureColorSelector.addEventListener('change', () => { const activeSwatch = labelColorSelector.querySelector('.color-swatch.active'); if (activeSwatch) { applyLabelColor(activeSwatch.dataset.colorHex); updateTextColorOptions(activeSwatch.dataset.colorName); } });
-  textColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch || swatch.classList.contains('disabled')) return; textColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; textObjects.forEach(textNode => textNode.fill(newColorHex)); if (currentSymbol) { currentSymbol.fill(newColorHex); } mainLayer.batchDraw(); });
-  textRowsContainer.addEventListener('input', (e) => { if (e.target.classList.contains('text-input')) { const index = e.target.dataset.rowIndex; const textNode = textObjects[index]; textNode.text(e.target.value); repositionAllTexts(); } });
-  textRowsContainer.addEventListener('change', (e) => { if (e.target.classList.contains('font-selector')) { const index = e.target.dataset.rowIndex; const textNode = textObjects[index]; textNode.fontFamily(e.target.value); repositionAllTexts(); } });
-  fontSizeInput.addEventListener('input', (e) => { const newSize = parseInt(e.target.value, 10); textObjects.forEach(textNode => textNode.fontSize(newSize)); repositionAllTexts(); });
-  
-  const categoryView = symbolControls.querySelector('#symbol-category-view');
-  const pickerView = symbolControls.querySelector('#symbol-picker-view');
-  const currentCategoryNameEl = symbolControls.querySelector('#current-category-name');
-  symbolControls.addEventListener('click', (e) => { const categoryBtn = e.target.closest('.symbol-category-btn'); const backBtn = e.target.closest('#back-to-categories-btn'); const symbolItem = e.target.closest('.symbol-item'); if (categoryBtn) { const categoryName = categoryBtn.dataset.category; categoryView.classList.add('hidden'); pickerView.classList.remove('hidden'); currentCategoryNameEl.textContent = categoryName; symbolControls.querySelectorAll('.symbol-grid').forEach(grid => grid.classList.add('hidden')); symbolControls.querySelector(`#symbol-grid-${categoryName}`).classList.remove('hidden'); } if (backBtn) { pickerView.classList.add('hidden'); categoryView.classList.remove('hidden'); } if (symbolItem) { const svgUrl = symbolItem.dataset.url; const symbolName = symbolItem.dataset.name; if(svgUrl) { addOrUpdateSymbol(svgUrl, symbolName); } } });
-  
-  mainLayer.on('dragmove', (e) => { const GUIDELINE_OFFSET = 5; guideLayer.find('.guid-line').forEach((l) => l.destroy()); const lineGuideStops = getLineGuideStops(); const itemBounds = getObjectSnappingEdges(e.target); const guides = []; lineGuideStops.vertical.forEach((lineGuide) => { itemBounds.vertical.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.x(Math.round(e.target.x() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'V' }); } }); }); lineGuideStops.horizontal.forEach((lineGuide) => { itemBounds.horizontal.forEach((itemBound) => { const diff = Math.abs(lineGuide - itemBound.guide); if (diff < GUIDELINE_OFFSET) { e.target.y(Math.round(e.target.y() - (itemBound.guide - lineGuide))); guides.push({ lineGuide, orientation: 'H' }); } }); }); drawGuides(guides); guideLayer.batchDraw(); });
-  mainLayer.on('dragend', () => { guideLayer.find('.guid-line').forEach((l) => l.destroy()); guideLayer.batchDraw(); });
-  
-  addToCartBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    guideLayer.destroyChildren();
-    const productForm = document.querySelector('form[action*="/cart/add"]');
-    const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
-    if (!variantIdInput || !variantIdInput.value) { alert('错误：找不到产品变体ID。'); return; }
-    const properties = {
-      'CustomTextPreview': stage.toDataURL({ mimeType: 'image/jpeg', quality: 0.7 }),
-      '尺寸': sizeSelector.querySelector('input[name="label-size"]:checked').value,
-      '固定方式': fixingTypeSelector.querySelector('input[name="fixing-type"]:checked').value,
-      '材质': materialSelector.querySelector('input[name="label-material"]:checked').nextElementSibling.querySelector('.text-xs').textContent,
-      '标签颜色': labelColorSelector.querySelector('.color-swatch.active')?.dataset.colorName || 'N/A',
-      '色彩模式': pureColorSelector.querySelector('input[name="pure-color"]:checked').value,
-      '字体大小': fontSizeInput.value,
-      '字体颜色': textColorSelector.querySelector('.color-swatch.active')?.dataset.colorName || 'N/A',
-    };
-    if (currentSymbol) { properties['Symbol'] = currentSymbol.getAttr('symbolName'); }
-    for (let i = 0; i < NUM_TEXT_ROWS; i++) {
-      const textVal = sectionElement.querySelector(`#text-input-${i+1}`).value;
-      if (textVal) {
-        properties[`Text Line ${i+1}`] = textVal;
-        properties[`Font Line ${i+1}`] = sectionElement.querySelector(`#font-selector-${i+1}`).value;
-      }
+
+  sizeSelector.addEventListener('change', (e) => { /* ... */ });
+  materialSelector.addEventListener('change', (e) => { /* ... */ });
+  labelColorSelector.addEventListener('click', (e) => { /* ... */ });
+  pureColorSelector.addEventListener('change', () => { /* ... */ });
+  textColorSelector.addEventListener('click', (e) => { /* ... */ });
+  textRowsContainer.addEventListener('input', (e) => { /* ... */ });
+  textRowsContainer.addEventListener('change', (e) => { /* ... */ });
+  fontSizeInput.addEventListener('input', (e) => { /* ... */ });
+  symbolControls.addEventListener('click', (e) => { /* ... */ });
+
+  // [核心升级] 3. 添加舞台点击事件以处理选中/取消选中
+  stage.on('click tap', (e) => {
+    // 如果点击的是背景或空白区域
+    if (e.target === stage || e.target === backgroundRect || e.target === colorOverlayRect) {
+      transformer.nodes([]); // 取消所有选中
+      return;
     }
-    const formData = { items: [{ id: variantIdInput.value, quantity: 1, properties }] };
-    fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
-      .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
-      .catch(console.error);
+
+    // 如果点击的是可拖动的对象 (文本或符号)
+    if (e.target.draggable()) {
+      transformer.nodes([e.target]); // 选中该对象
+    } else {
+      transformer.nodes([]); // 否则取消所有选中
+    }
   });
 
-  populateSymbolSelectors();
-  const initialMaterialUrl = materialSelector.querySelector('input[name="label-material"]:checked').value;
-  applyBaseMaterial(initialMaterialUrl);
-  const initialLabelSwatch = labelColorSelector.querySelector('.color-swatch.active');
-  if (initialLabelSwatch) { applyLabelColor(initialLabelSwatch.dataset.colorHex); updateTextColorOptions(initialLabelSwatch.dataset.colorName); }
-  const initialTextSwatch = textColorSelector.querySelector('.color-swatch.active');
-  if(initialTextSwatch) { textObjects.forEach(textNode => textNode.fill(initialTextSwatch.dataset.colorHex)); }
-  repositionAllTexts();
-  stage.batchDraw();
-  console.log("Konva: 初始化流程完成！ (版本 3.5.6)");
+  // [核心升级] 4. 添加到购物车前取消选中
+  addToCartBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    transformer.nodes([]); // 取消选中，隐藏变换框
+    mainLayer.draw(); // 确保变换框消失
+    // ... (剩余的 addToCart 逻辑)
+  });
+
+  // --- 恢复所有函数的完整形态 ---
+  const fullFuncsAndListeners = () => {
+    const repositionAllTexts_full = () => { const activeTexts = textObjects.filter(t => t.text()); if (activeTexts.length === 0) return; const totalHeight = activeTexts.reduce((sum, t) => sum + t.height(), 0); let startY = (stage.height() - totalHeight) / 2; textObjects.forEach(textNode => { textNode.x(stage.width() / 2); textNode.offsetX(textNode.width() / 2); if (textNode.text()) { textNode.y(startY); textNode.offsetY(0); startY += textNode.height(); } else { textNode.y(-1000); } }); mainLayer.batchDraw(); };
+    const updateCanvasSize_full = (newSizeValue) => { const newRatio = sizeRatios[newSizeValue]; const newHeight = baseWidth * newRatio; konvaContainer.style.height = `${newHeight}px`; stage.height(newHeight); backgroundRect.height(newHeight); colorOverlayRect.height(newHeight); repositionAllTexts_full(); stage.batchDraw(); };
+    const applyBaseMaterial_full = (materialUrl) => { const imageObj = new Image(); imageObj.crossOrigin = 'Anonymous'; imageObj.onload = () => { backgroundRect.fillPatternImage(imageObj); backgroundRect.fillPatternRepeat('repeat'); backgroundRect.fill(null); mainLayer.batchDraw(); }; imageObj.src = materialUrl; };
+    const applyLabelColor_full = (colorHex) => { colorOverlayRect.fill(colorHex); const isPureColor = pureColorSelector.querySelector('#pure-color-on').checked; if (isPureColor) { colorOverlayRect.opacity(1.0); } else { if (colorHex.toUpperCase() === '#FFFFFF') { colorOverlayRect.opacity(0); } else { colorOverlayRect.opacity(0.7); } } mainLayer.batchDraw(); };
+    const updateTextColorOptions_full = (selectedLabelColorName) => { const conflictingColors = colorConflictMap[selectedLabelColorName] || []; const textSwatches = textColorSelector.querySelectorAll('.color-swatch'); textSwatches.forEach(swatch => { const swatchColorName = swatch.dataset.colorName; swatch.classList.toggle('disabled', conflictingColors.includes(swatchColorName)); }); const activeTextSwatch = textColorSelector.querySelector('.color-swatch.active'); if (activeTextSwatch && activeTextSwatch.classList.contains('disabled')) { const firstAvailable = textColorSelector.querySelector('.color-swatch:not(.disabled)'); if (firstAvailable) { firstAvailable.click(); } } };
+    const populateSymbolSelectors_full = () => {
+      const categoryGrid = symbolControls.querySelector('#symbol-category-grid');
+      const symbolGridContainer = symbolControls.querySelector('#symbol-grid-container');
+      for (const categoryName in symbolData) {
+        const categoryButton = document.createElement('button'); categoryButton.type = 'button'; categoryButton.className = 'symbol-category-btn p-2 border rounded-md text-sm w-full text-left hover:bg-gray-50'; categoryButton.textContent = categoryName; categoryButton.dataset.category = categoryName; categoryGrid.appendChild(categoryButton);
+        const grid = document.createElement('div'); grid.id = `symbol-grid-${categoryName}`; grid.className = 'symbol-grid hidden flex flex-wrap gap-2';
+        symbolData[categoryName].forEach(symbol => {
+          const symbolWrapper = document.createElement('div'); symbolWrapper.className = 'symbol-item'; symbolWrapper.title = symbol.name; symbolWrapper.dataset.name = symbol.name;
+          const imgUrl = allSymbolUrls[symbol.file];
+          if (imgUrl) { symbolWrapper.dataset.url = imgUrl; symbolWrapper.innerHTML = `<img src="${imgUrl}" alt="${symbol.name}" class="w-10 h-10" />`; } else { console.warn(`找不到符号文件的 URL: ${symbol.file}`); symbolWrapper.innerHTML = `<span>?</span>`; }
+          grid.appendChild(symbolWrapper);
+        });
+        symbolGridContainer.appendChild(grid);
+      }
+    };
+
+    sizeSelector.addEventListener('change', (e) => { if (e.target.name === 'label-size') { updateCanvasSize_full(e.target.value); } });
+    materialSelector.addEventListener('change', (e) => { if (e.target.name === 'label-material') { applyBaseMaterial_full(e.target.value); } });
+    labelColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch) return; labelColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; const newColorName = swatch.dataset.colorName; applyLabelColor_full(newColorHex); updateTextColorOptions_full(newColorName); });
+    pureColorSelector.addEventListener('change', () => { const activeSwatch = labelColorSelector.querySelector('.color-swatch.active'); if (activeSwatch) { applyLabelColor_full(activeSwatch.dataset.colorHex); updateTextColorOptions_full(activeSwatch.dataset.colorName); } });
+    textColorSelector.addEventListener('click', (e) => { const swatch = e.target.closest('.color-swatch'); if (!swatch || swatch.classList.contains('disabled')) return; textColorSelector.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); const newColorHex = swatch.dataset.colorHex; textObjects.forEach(textNode => textNode.fill(newColorHex)); if (currentSymbol) { currentSymbol.fill(newColorHex); } mainLayer.batchDraw(); });
+    textRowsContainer.addEventListener('input', (e) => { if (e.target.classList.contains('text-input')) { const index = e.target.dataset.rowIndex; const textNode = textObjects[index]; textNode.text(e.target.value); repositionAllTexts_full(); } });
+    textRowsContainer.addEventListener('change', (e) => { if (e.target.classList.contains('font-selector')) { const index = e.target.dataset.rowIndex; const textNode = textObjects[index]; textNode.fontFamily(e.target.value); repositionAllTexts_full(); } });
+    fontSizeInput.addEventListener('input', (e) => { const newSize = parseInt(e.target.value, 10); textObjects.forEach(textNode => textNode.fontSize(newSize)); repositionAllTexts_full(); });
+    
+    const categoryView = symbolControls.querySelector('#symbol-category-view');
+    const pickerView = symbolControls.querySelector('#symbol-picker-view');
+    const currentCategoryNameEl = symbolControls.querySelector('#current-category-name');
+    symbolControls.addEventListener('click', (e) => { const categoryBtn = e.target.closest('.symbol-category-btn'); const backBtn = e.target.closest('#back-to-categories-btn'); const symbolItem = e.target.closest('.symbol-item'); if (categoryBtn) { const categoryName = categoryBtn.dataset.category; categoryView.classList.add('hidden'); pickerView.classList.remove('hidden'); currentCategoryNameEl.textContent = categoryName; symbolControls.querySelectorAll('.symbol-grid').forEach(grid => grid.classList.add('hidden')); symbolControls.querySelector(`#symbol-grid-${categoryName}`).classList.remove('hidden'); } if (backBtn) { pickerView.classList.add('hidden'); categoryView.classList.remove('hidden'); } if (symbolItem) { const svgUrl = symbolItem.dataset.url; const symbolName = symbolItem.dataset.name; if(svgUrl) { addOrUpdateSymbol(svgUrl, symbolName); } } });
+    
+    const originalAddToCart = addToCartBtn.onclick;
+    addToCartBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      transformer.nodes([]);
+      mainLayer.draw();
+      const productForm = document.querySelector('form[action*="/cart/add"]');
+      const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
+      if (!variantIdInput || !variantIdInput.value) { alert('错误：找不到产品变体ID。'); return; }
+      const properties = {
+        'CustomTextPreview': stage.toDataURL({ mimeType: 'image/jpeg', quality: 0.7 }),
+        '尺寸': sizeSelector.querySelector('input[name="label-size"]:checked').value,
+        '固定方式': fixingTypeSelector.querySelector('input[name="fixing-type"]:checked').value,
+        '材质': materialSelector.querySelector('input[name="label-material"]:checked').nextElementSibling.querySelector('.text-xs').textContent,
+        '标签颜色': labelColorSelector.querySelector('.color-swatch.active')?.dataset.colorName || 'N/A',
+        '色彩模式': pureColorSelector.querySelector('input[name="pure-color"]:checked').value,
+        '字体大小': fontSizeInput.value,
+        '字体颜色': textColorSelector.querySelector('.color-swatch.active')?.dataset.colorName || 'N/A',
+      };
+      if (currentSymbol) { properties['Symbol'] = currentSymbol.getAttr('symbolName'); }
+      for (let i = 0; i < NUM_TEXT_ROWS; i++) {
+        const textVal = sectionElement.querySelector(`#text-input-${i+1}`).value;
+        if (textVal) {
+          properties[`Text Line ${i+1}`] = textVal;
+          properties[`Font Line ${i+1}`] = sectionElement.querySelector(`#font-selector-${i+1}`).value;
+        }
+      }
+      const formData = { items: [{ id: variantIdInput.value, quantity: 1, properties }] };
+      fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
+        .then(res => res.json()).then(data => { if (!data.status) { window.location.href = '/cart'; } else { alert('添加失败: ' + data.description); }})
+        .catch(console.error);
+    });
+
+    populateSymbolSelectors_full();
+    const initialMaterialUrl = materialSelector.querySelector('input[name="label-material"]:checked').value;
+    applyBaseMaterial_full(initialMaterialUrl);
+    const initialLabelSwatch = labelColorSelector.querySelector('.color-swatch.active');
+    if (initialLabelSwatch) { applyLabelColor_full(initialLabelSwatch.dataset.colorHex); updateTextColorOptions_full(initialLabelSwatch.dataset.colorName); }
+    const initialTextSwatch = textColorSelector.querySelector('.color-swatch.active');
+    if(initialTextSwatch) { textObjects.forEach(textNode => textNode.fill(initialTextSwatch.dataset.colorHex)); }
+    repositionAllTexts_full();
+    stage.batchDraw();
+  };
+  
+  fullFuncsAndListeners();
 };
   
 const bootstrapper = () => {
