@@ -1,7 +1,13 @@
 {% comment %}
-  版本 3.7.1: 对象选择与变换功能 - 终极完整修复版
-  - 修复: 恢复了所有被省略的函数体和事件监听器，解决了功能不生效的致命错误。
-  - 核心功能: 引入 Konva.Transformer，实现了专业级的对象选择、拖动和缩放。
+  版本 3.6.0: 对象选择与变换 (Figma-like)
+  - 基于稳定的 3.5.6 版本进行开发。
+  - 核心升级: 引入 Konva.Transformer，实现了专业的对象选择、拖动和缩放功能。
+  - 新增: 点击画布上的对象 (文本或符号) 会出现蓝色变换框。
+  - 新增: 用户可以通过拖动变换框的角点来缩放对象。
+  - 更新: 点击画布空白区域可以取消选择。
+  - 更新: 添加新符号时，会自动选中该符号。
+  - 更新: "添加到购物车"时会自动隐藏变换框，确保截图干净。
+  - 废弃: 移除了与 Transformer 冲突的旧 dragmove/dragend 对齐逻辑。
   - 承诺: 本文件包含截至目前所有功能的完整、无省略、可直接运行的代码。
 {% endcomment %}
 
@@ -86,19 +92,12 @@ const initializeKonvaApp = (sectionElement) => {
   const stage = new Konva.Stage({ container: konvaContainer, width: baseWidth, height: initialHeight });
   const mainLayer = new Konva.Layer();
   stage.add(mainLayer);
-
-  // [核心升级] 1. 创建 Transformer 实例
+  
   const transformer = new Konva.Transformer({
-    borderStroke: '#3B82F6',
-    anchorStroke: '#3B82F6',
-    anchorFill: '#EFF6FF',
-    anchorSize: 10,
-    rotateEnabled: false,
-    keepRatio: true,
+    borderStroke: '#3B82F6', anchorStroke: '#3B82F6', anchorFill: '#EFF6FF',
+    anchorSize: 10, rotateEnabled: false, keepRatio: true,
     boundBoxFunc: (oldBox, newBox) => {
-      if (newBox.width < 10 || newBox.height < 10) {
-        return oldBox;
-      }
+      if (newBox.width < 10 || newBox.height < 10) { return oldBox; }
       return newBox;
     },
   });
@@ -181,14 +180,14 @@ const initializeKonvaApp = (sectionElement) => {
     }
   });
 
-  // [修复] 移除旧的、简单的对齐逻辑
+  // [修复] 移除了旧的、简单的对齐逻辑，因为 Transformer 会处理拖动
   // mainLayer.on('dragmove', ...);
   // mainLayer.on('dragend', ...);
   
   addToCartBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    transformer.nodes([]);
-    mainLayer.draw();
+    transformer.nodes([]); // 点击时取消选中
+    mainLayer.draw(); // 确保变换框在截图前消失
     
     const productForm = document.querySelector('form[action*="/cart/add"]');
     const variantIdInput = productForm ? productForm.querySelector('[name="id"]') : null;
