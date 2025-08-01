@@ -37,23 +37,46 @@
     }
 
     async function updateCart() {
-        const LINE_ITEM_KEY = "43123285098565:6d5c8c7d07cb271fa81e23a45d178fd3"
+        const LINE_ITEM_KEY = "43123285098565:6d5c8c7d07cb271fa81e23a45d178fd3";
 
-        const addToCartRequest = await fetch('/cart/add.js', {
+        const response = await fetch('/cart/update.js', {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 updates: {
-                    [LINE_ITEM_KEY]: 5,
-                }
-                attributes: {
-                    'cart_test': 'cart test attribute',
+                    [LINE_ITEM_KEY]: 5
                 },
-                note: 'This is a test note',
+                attributes: {
+                    cart_test: ' UPDATED cart test attribute',
+                },
+                note: 'UPDATED This is a test note',
             })
-        })
+        });
+
+        const cart = await response.json();
+        console.log('Cart updated:', cart);
+
+        window.location.reload();
+    }
+
+    async function changeCart() {
+        const VARIANT_ID = "43123285098565";
+
+        const response = await fetch('/cart/change.js', {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: VARIANT_ID,
+                quantity: 4,
+            })
+        });
+
+        const cart = await response.json();
+        console.log('Cart changed:', cart);
 
         window.location.reload();
     }
