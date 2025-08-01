@@ -86,6 +86,11 @@
     }
 
 
+    async function clearCart() {
+        await fetch("/cart/clear.js");
+        window.location.reload();
+    }
+
     async function ajaxAPI(){
 
     }
