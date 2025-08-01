@@ -72,7 +72,11 @@
             body: JSON.stringify({
                 id: VARIANT_ID,
                 quantity: 4,
-            })
+                properties: {
+                    test: "test updated",
+                    test2: "new value",
+                },
+            }),
         });
 
         const cart = await response.json();
