@@ -12,7 +12,7 @@
     async function addToCart(variantId, quantity) {
         const addToCartRequest = await fetch('/cart/add.js', {
             method: "POST",
-            header: {
+            headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -28,12 +28,36 @@
                 ],
                 attributes: {
                     'cart_test': 'cart test attribute',
-                }
+                },
+                note: 'This is a test note',
             })
         })
 
         window.location.reload();
     }
+
+    async function updateCart() {
+        const LINE_ITEM_KEY = "43123285098565:6d5c8c7d07cb271fa81e23a45d178fd3"
+
+        const addToCartRequest = await fetch('/cart/add.js', {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                updates: {
+                    [LINE_ITEM_KEY]: 5,
+                }
+                attributes: {
+                    'cart_test': 'cart test attribute',
+                },
+                note: 'This is a test note',
+            })
+        })
+
+        window.location.reload();
+    }
+
 
     async function ajaxAPI(){
 
